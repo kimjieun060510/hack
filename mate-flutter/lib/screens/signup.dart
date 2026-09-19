@@ -18,29 +18,27 @@ class SignupScreen extends LiveView {
       child: ColoredBox(
         color: AuthUi.bg,
         child: SafeArea(
-          child: Column(children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  key: const Key('signupBack'),
-                  tooltip: '로그인으로',
-                  onPressed: app.backToLogin,
-                  icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: AuthUi.ink),
-                ),
-              ),
-            ),
-            Expanded(
+          child: Stack(children: [
+            Positioned.fill(
               child: LayoutBuilder(builder: (context, constraints) {
                 return SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(22, 4, 22, 24 + MediaQuery.viewInsetsOf(context).bottom),
+                  padding: EdgeInsets.fromLTRB(22, 12, 22, 16 + MediaQuery.viewInsetsOf(context).bottom),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight - 8),
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight - 16),
                     child: const _SignupForm(),
                   ),
                 );
               }),
+            ),
+            Positioned(
+              left: 4,
+              top: 2,
+              child: IconButton(
+                key: const Key('signupBack'),
+                tooltip: '로그인으로',
+                onPressed: app.backToLogin,
+                icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: AuthUi.ink),
+              ),
             ),
           ]),
         ),
@@ -66,16 +64,16 @@ class _SignupForm extends LiveView {
           letterSpacing: -0.8,
         ),
       ),
-      const SizedBox(height: 22),
+      const SizedBox(height: 16),
       const _PhotoBox(),
-      const SizedBox(height: 14),
+      const SizedBox(height: 10),
       Row(children: [
         Expanded(
           flex: 3,
           child: _FillBtn(
             key: const Key('signupCamera'),
             label: '사진 찍기',
-            icon: Icons.photo_camera_outlined,
+            icon: Icons.photo_camera,
             onTap: app.signupPhoto == 'scanning' ? null : app.fakeSignupPhoto,
           ),
         ),
@@ -90,11 +88,11 @@ class _SignupForm extends LiveView {
           ),
         ),
       ]),
-      const SizedBox(height: 12),
+      const SizedBox(height: 10),
       const _InfoBanner(),
-      const SizedBox(height: 18),
-      _LabeledField(label: '이름', hint: '이름을 입력해주세요', controller: app.signupNameC),
       const SizedBox(height: 14),
+      _LabeledField(label: '이름', hint: '이름을 입력해주세요', controller: app.signupNameC),
+      const SizedBox(height: 10),
       _LabeledField(
         label: '학번',
         hint: '학번을 입력해주세요',
@@ -102,11 +100,11 @@ class _SignupForm extends LiveView {
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       ),
-      const SizedBox(height: 14),
+      const SizedBox(height: 10),
       _LabeledField(label: '학과', hint: '학과를 입력해주세요', controller: app.signupDeptC),
-      const SizedBox(height: 14),
+      const SizedBox(height: 10),
       const _GenderRow(),
-      const SizedBox(height: 22),
+      const SizedBox(height: 16),
       _FillBtn(
         key: const Key('signupSubmit'),
         label: '제출',
@@ -149,7 +147,7 @@ class _PhotoBox extends LiveView {
     return CustomPaint(
       painter: _DashPainter(color: st == 'done' ? AuthUi.green : const Color(0xFF9ECBB0)),
       child: Container(
-        height: 168,
+        height: 148,
         width: double.infinity,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -172,7 +170,7 @@ class _IdBadge extends StatelessWidget {
       child: Center(
         child: done
             ? const Icon(Icons.check, color: AuthUi.greenDeep, size: 28)
-            : CustomPaint(size: const Size(28, 20), painter: _MiniIdPainter()),
+            : CustomPaint(size: const Size(30, 22), painter: _MiniIdPainter()),
       ),
     );
   }
@@ -184,17 +182,14 @@ class _MiniIdPainter extends CustomPainter {
     final stroke = Paint()
       ..color = AuthUi.greenDeep
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..strokeJoin = StrokeJoin.round;
-    final r = RRect.fromRectAndRadius(Rect.fromLTWH(0.5, 0.5, size.width - 1, size.height - 1), const Radius.circular(3.5));
-    canvas.drawRRect(r, stroke);
-    canvas.drawCircle(Offset(size.width * 0.28, size.height * 0.50), 3.2, stroke);
-    final line = Paint()
-      ..color = AuthUi.greenDeep
-      ..strokeWidth = 1.5
+      ..strokeWidth = 1.7
+      ..strokeJoin = StrokeJoin.round
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(size.width * 0.52, size.height * 0.38), Offset(size.width * 0.82, size.height * 0.38), line);
-    canvas.drawLine(Offset(size.width * 0.52, size.height * 0.62), Offset(size.width * 0.74, size.height * 0.62), line);
+    final r = RRect.fromRectAndRadius(Rect.fromLTWH(0.8, 1.2, size.width - 1.6, size.height - 2.4), const Radius.circular(4));
+    canvas.drawRRect(r, stroke);
+    canvas.drawCircle(Offset(size.width * 0.30, size.height * 0.52), 3.4, stroke);
+    canvas.drawLine(Offset(size.width * 0.50, size.height * 0.40), Offset(size.width * 0.84, size.height * 0.40), stroke);
+    canvas.drawLine(Offset(size.width * 0.50, size.height * 0.62), Offset(size.width * 0.76, size.height * 0.62), stroke);
   }
 
   @override
@@ -207,7 +202,7 @@ class _InfoBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+      padding: const EdgeInsets.fromLTRB(12, 10, 14, 10),
       decoration: BoxDecoration(color: AuthUi.mint, borderRadius: BorderRadius.circular(14)),
       child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(
@@ -243,9 +238,9 @@ class _LabeledField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AuthUi.ink)),
-      const SizedBox(height: 8),
+      const SizedBox(height: 6),
       Container(
-        height: 48,
+        height: 46,
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
@@ -278,7 +273,7 @@ class _GenderRow extends LiveView {
   Widget body(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text('성별', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AuthUi.ink)),
-      const SizedBox(height: 8),
+      const SizedBox(height: 6),
       Row(children: [
         Expanded(child: _GenderChip(id: 'm', label: '남')),
         const SizedBox(width: 8),
@@ -303,7 +298,7 @@ class _GenderChip extends StatelessWidget {
         onTap: () => app.setSignupGender(id),
         borderRadius: BorderRadius.circular(22),
         child: Container(
-          height: 44,
+          height: 42,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
@@ -329,7 +324,7 @@ class _FillBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 50,
+      height: 48,
       child: Material(
         color: AuthUi.priFill,
         borderRadius: BorderRadius.circular(25),
@@ -359,7 +354,7 @@ class _GhostBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 50,
+      height: 48,
       child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
