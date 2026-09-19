@@ -56,38 +56,60 @@ const List<Opp> kOpps = [
   Opp('o6', 'https://everytime.kr', 'club', 'etta', '에타', '해커톤 팀원 모집', '9-22', '23:59', '디자이너·기획자 환영', ['개발·IT', '디자인']),
 ];
 
+/// 가입한 학생 (데모용). 밥약 · 놀기는 서로 팔로우한(맞팔) 사람끼리만 이어져요.
+/// 과팅은 팔로우와 상관없이 가입한 모든 학생이 대상이에요.
 class Friend {
   final String n, d, t; // 이름, 학과·학번, 색 종류
   final String s; // 짧은 학과 이름 (과팅 카드용)
   final int y; // 학번 두 자리
-  const Friend(this.n, this.d, this.t, this.s, this.y);
+  final String no; // 학번 전체 (검색용)
+  final bool followsMe; // 상대가 나를 팔로우하고 있는지
+  const Friend(this.n, this.d, this.t, this.s, this.y, this.no, {this.followsMe = true});
+
+  /// 학과 이름만 (d 에서 학번 두 자리를 뺀 것)
+  String get dept => d.replaceAll(RegExp(r'\s*\d+$'), '');
 }
 
 const List<Friend> kFriends = [
-  Friend('김민준', '컴퓨터공학 26', 'class', '컴공', 26),
-  Friend('이서연', '경영학 26', 'meet', '경영', 26),
-  Friend('박지훈', '전자전기공학 26', 'job', '전전', 26),
+  Friend('김민준', '컴퓨터공학 26', 'class', '컴공', 26, '2026110231'),
+  Friend('이서연', '경영학 26', 'meet', '경영', 26, '2026210417'),
+  Friend('박지훈', '전자전기공학 26', 'job', '전전', 26, '2026310528', followsMe: false), // 내가 팔로우만 한 사람
+  Friend('낙빈', '스포츠과학 24', 'dept', '스과', 24, '2024410163'),
+  Friend('최유나', '간호학 25', 'opp', '간호', 25, '2025510372'), // 나를 팔로우했지만 내가 아직 안 한 사람
+  Friend('한지우', '컴퓨터공학 26', 'assign', '컴공', 26, '2026110774'), // 나를 팔로우했지만 내가 아직 안 한 사람
+  Friend('정하늘', '소프트웨어 26', 'class', '소프트', 26, '2026120845', followsMe: false),
+  Friend('윤도현', '화학공학 25', 'job', '화공', 25, '2025320916', followsMe: false),
+  Friend('강예린', '생명과학 25', 'meet', '생명', 25, '2025610259', followsMe: false),
+  Friend('송재원', '경영학 24', 'dept', '경영', 24, '2024210688', followsMe: false),
+  Friend('오나은', '소프트웨어 26', 'opp', '소프트', 26, '2026120319', followsMe: false),
 ];
+
+/// 처음에 내가 팔로우하고 있는 사람 (kFriends 번호)
+const Set<int> kFollowingSeed = {0, 1, 2, 3};
 
 /// 밥약 찾기 · 내 친구가 보낸 밥약
 class MealReq {
   final String id, time, title, place, msg;
-  const MealReq(this.id, this.time, this.title, this.place, this.msg);
+  final int by; // 보낸 사람 (kFriends 번호)
+  const MealReq(this.id, this.time, this.title, this.place, this.msg, this.by);
 }
 
 const List<MealReq> kMealReqs = [
-  MealReq('r1', '12:00', '학식', '공학관', '한식 먹으러'),
-  MealReq('r2', '12:30', '돈까스', '인문관', '밥먹을 사람'),
+  MealReq('r1', '12:00', '학식', '공학관', '한식 먹으러', 0),
+  MealReq('r2', '12:30', '돈까스', '인문관', '밥먹을 사람', 4),
 ];
 
 /// 밥약 찾기 · 랜덤 매칭
 class RandMeal {
-  final String id, time, name, dept, msg;
-  const RandMeal(this.id, this.time, this.name, this.dept, this.msg);
+  final String id, time, msg;
+  final int by; // 랜덤으로 이어질 사람 (kFriends 번호, 맞팔한 사람만 보여요)
+  const RandMeal(this.id, this.time, this.msg, this.by);
+  String get name => kFriends[by].n;
+  String get dept => '${kFriends[by].d}학번';
 }
 
 const List<RandMeal> kRandMeals = [
-  RandMeal('q1', '12:30', '낙빈', '스포츠과학과 24학번', '돈까스 좋아해요'),
+  RandMeal('q1', '12:30', '돈까스 좋아해요', 3),
 ];
 
 /// 과팅 찾기 · 올라온 과팅 (m: 남자 팀원, f: 여자 팀원 — (짧은 학과, 학번))
@@ -116,13 +138,15 @@ const List<(String, String, String)> kActs = [
 class PlayPost {
   final String id, title, when, who, time, end;
   final String? key;
-  final List<String> names;
-  const PlayPost(this.id, this.title, this.when, this.who, this.names, this.time, this.end, [this.key]);
+  final List<int> by; // 올린 사람들 (kFriends 번호). 첫 번째가 글쓴이예요.
+  const PlayPost(this.id, this.title, this.when, this.who, this.by, this.time, this.end, [this.key]);
+  List<String> get names => [for (final i in by) kFriends[i].n[0]];
 }
 
 const List<PlayPost> kPlays = [
-  PlayPost('p1', '영화 보러 갈 사람?', '오늘 20:00', '2~4명 · 익명 가능', ['최', '정'], '20:00', '22:30'),
-  PlayPost('p2', '보드게임 카페 가실 분', '토 9/26 15:00', '3~5명 · 같은 학교', ['한'], '15:00', '17:00', '9-26'),
+  PlayPost('p1', '영화 보러 갈 사람?', '오늘 20:00', '2~4명 · 익명 가능', [0, 1], '20:00', '22:30'),
+  PlayPost('p2', '보드게임 카페 가실 분', '토 9/26 15:00', '3~5명 · 같은 학교', [3], '15:00', '17:00', '9-26'),
+  PlayPost('p3', '카페 가서 수다 떨 사람', '일 9/27 14:00', '2~3명 · 맞팔 친구', [4], '14:00', '16:00', '9-27'),
 ];
 
 /// 내 정보 화면의 "데모 둘러보기" 목록
