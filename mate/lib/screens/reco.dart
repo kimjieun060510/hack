@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data.dart';
-import '../sheets.dart';
+import '../feeds.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -9,7 +9,7 @@ import '../widgets.dart';
 /// 추천 탭: 학부생에게 필요한 소식을 모아 보여주고, 누르면 달력에 마감일이 들어가요.
 /// 소프트 학부 공지·취업·학부연구생·공모전과 학교 장학/비교과를 가져와요.
 
-const Map<String, String> _catStyle = {'acad': 'dept', 'schol': 'job', 'lab': 'class', 'vol': 'meet', 'club': 'dept'};
+const Map<String, String> _catStyle = {'schol': 'job', 'lab': 'class', 'vol': 'meet', 'club': 'dept', 'etc': 'opp'};
 
 class RecoScreen extends LiveView {
   const RecoScreen({super.key});
@@ -109,7 +109,7 @@ class _FeatCard extends StatelessWidget {
         ]),
         const SizedBox(height: 10),
         InkWell(
-          onTap: () => openUrl(o.url),
+          onTap: () => openUrl(articleUrl(o)),
           borderRadius: BorderRadius.circular(10),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Text.rich(TextSpan(children: [
@@ -136,7 +136,7 @@ class _FeatCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           InkWell(
-            onTap: () => showShareSheet(context, o.id),
+            onTap: () => openUrl(articleUrl(o)),
             borderRadius: BorderRadius.circular(14),
             child: Container(
               height: 44,
@@ -145,7 +145,7 @@ class _FeatCard extends StatelessWidget {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(icon('share'), size: 18, color: p.featInk),
                 const SizedBox(width: 6),
-                Text('친구와 함께', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: p.featInk)),
+                Text('이 공지', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: p.featInk)),
               ]),
             ),
           ),
@@ -199,11 +199,11 @@ class _OppRow extends StatelessWidget {
       child: Row(children: [
         Expanded(
           child: InkWell(
-            onTap: () => openUrl(o.url),
+            onTap: () => openUrl(articleUrl(o)),
             borderRadius: BorderRadius.circular(10),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Wrap(spacing: 6, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                Pill(kCats[o.cat] ?? '', style: ts),
+                Pill(kCats[o.cat] ?? '기타', style: ts),
                 Text(o.src, style: TextStyle(fontSize: 12, color: p.mut)),
                 Text(ddayText(o.key), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: p.types['assign']!.ink)),
               ]),
@@ -223,7 +223,7 @@ class _OppRow extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Column(mainAxisSize: MainAxisSize.min, children: [
-          _RoundBtn(size: 48, ic: 'share', kind: 'line', label: '${o.title} 친구와 함께 신청', onTap: () => showShareSheet(context, o.id)),
+          _RoundBtn(size: 48, ic: 'share', kind: 'line', label: '${o.title} 공지 원문 열기', onTap: () => openUrl(articleUrl(o))),
           const SizedBox(height: 6),
           _RoundBtn(size: 60, ic: on ? 'check' : 'plus', kind: on ? 'on' : 'pri', label: '${on ? '달력에서 빼기' : '달력에 추가'}: ${o.title}', onTap: () => app.toggleOpp(o.id)),
         ]),

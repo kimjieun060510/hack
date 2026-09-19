@@ -31,12 +31,12 @@ const int kMaxCustom = 6;
 
 /// 추천 분야
 const Map<String, String> kCats = {
-  'acad': '학사',
   'edu': '비교과',
   'schol': '장학금',
   'lab': '산학협력',
   'vol': '봉사활동',
   'club': '동아리',
+  'etc': '기타',
 };
 const List<String> kFields = ['개발·IT', '디자인', '경영·마케팅', '연구·실험', '공연·예술', '취업·진로'];
 

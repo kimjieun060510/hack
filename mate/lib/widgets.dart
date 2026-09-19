@@ -11,8 +11,7 @@ import 'feeds.dart';
 Pal pal(BuildContext c) => Pal.of(c);
 
 Future<void> openUrl(String url) async {
-  final uri = Uri.parse(url);
-  if (!await canLaunchUrl(uri)) return;
+  final uri = Uri.parse(url.replaceAll('&amp;', '&'));
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 

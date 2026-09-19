@@ -44,7 +44,7 @@ void main() {
     expect(list.first.categoryRaw, '장학');
     expect(list.first.posted, '2026-09-18');
     expect(list.first.title, contains('대학원우수장학금'));
-    expect(list.first.url, contains('articleNo=140050'));
+    expect(list.first.url, 'https://www.skku.edu/skku/campus/skk_comm/notice01.do?mode=view&articleNo=140050');
   });
 
   test('제목 안의 마감일을 달력 키로 바꿔요', () {
@@ -54,7 +54,13 @@ void main() {
     expect(noticeWhen('날짜 없는 공지', '2026-09-18').key, '9-18');
     expect(noticeCat('장학', '선발 안내'), 'schol');
     expect(noticeCat('동아리', '모집'), 'club');
-    expect(noticeCat('학사', '졸업평가 안내'), 'acad');
+    expect(noticeCat('학사', '졸업평가 안내'), 'etc');
+    expect(noticeCat('행사/세미나', '2026 ICPC 대학생 프로그래밍 경시대회 안내'), 'edu');
+    expect(noticeCat('', '국가장학금 지급 안내'), 'schol');
+    expect(noticeCat('취업', 'ICT학점연계 인턴십'), 'lab');
+    expect(noticeCat('채용/모집', '신입사원 모집'), 'etc');
+    expect(noticeCat('행사/세미나', '비교과 프로그램 참여 후기 조사'), 'edu');
+    expect(noticeViewUrl('https://cse.skku.edu/cse/notice.do?mode=list', '225776'), 'https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225776');
   });
 
   test('학부생에게 필요한 글만 남기고 대학원·조교는 빼요', () {
@@ -103,6 +109,7 @@ void main() {
     expect(bundle.opps.every((o) => keepUndergradNotice(o.title, o.meta)), isTrue);
     expect(bundle.opps.any((o) => o.title.contains('ICPC')), isTrue);
     expect(bundle.opps.any((o) => o.title.contains('대학원우수')), isFalse);
+    expect(bundle.opps.where((o) => o.title.contains('ICPC')).every((o) => o.url.contains('articleNo=225776')), isTrue);
     expect(bundle.opps.first.src, '학교 홈페이지');
   });
 

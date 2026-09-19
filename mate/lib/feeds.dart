@@ -139,11 +139,10 @@ class SkkuBoardParser {
       final title = _plain(rawTitle);
       if (title.isEmpty) continue;
       final posted = _first(RegExp(r'<li>(20\d{2}-\d{2}-\d{2})</li>'), block) ?? '';
-      final sep = baseUrl.contains('?') ? '&' : '?';
       out.add(RawNotice(
         id: id,
         title: title,
-        url: '$baseUrl${sep}mode=view&articleNo=$id',
+        url: noticeViewUrl(baseUrl, id),
         posted: posted,
         categoryRaw: cat,
       ));
@@ -261,14 +260,32 @@ List<RawNotice> selectUndergradNotices(Iterable<RawNotice> raw) {
   return out;
 }
 
+/// 게시판 글의 원문(그 글 보기) 주소. 목록 페이지가 아니라 articleNo 가 붙은 주소예요.
+String noticeViewUrl(String baseUrl, String articleNo) {
+  final uri = Uri.parse(baseUrl.replaceAll('&amp;', '&'));
+  final path = '${uri.scheme}://${uri.host}${uri.path}';
+  return '$path?mode=view&articleNo=$articleNo';
+}
+
+String articleUrl(Opp o) {
+  final raw = o.url.replaceAll('&amp;', '&');
+  if (raw.contains('articleNo=')) return raw;
+  final m = RegExp(r'(?:feed-(?:school|dept)-)?(\d+)$').firstMatch(o.id);
+  if (m == null) return raw;
+  final base = o.g == 'dept' ? 'https://cse.skku.edu/cse/notice.do' : (o.g == 'school' ? 'https://www.skku.edu/skku/campus/skk_comm/notice01.do' : raw);
+  if (!base.startsWith('http')) return raw;
+  return noticeViewUrl(base, m.group(1)!);
+}
+
 String noticeCat(String raw, String title) {
   final t = '$raw $title';
   if (t.contains('장학')) return 'schol';
   if (t.contains('봉사')) return 'vol';
-  if (t.contains('학사') || t.contains('수강') || t.contains('졸업')) return 'acad';
-  if (t.contains('산학') || t.contains('학부연구') || (t.contains('인턴') && t.contains('랩'))) return 'lab';
   if (t.contains('동아리')) return 'club';
-  return 'edu';
+  if (t.contains('산학') || t.contains('학부연구') || t.contains('학점연계') || t.contains('채용연계')) return 'lab';
+  if (RegExp(r'비교과|특강|공모|대회|해커톤|아이디어톤|챌린지|부트캠프|EXPO|엑스포|참가팀|설문|프로그램').hasMatch(t)) return 'edu';
+  if (t.contains('인턴')) return 'lab';
+  return 'etc';
 }
 
 List<String> noticeFields(String title) {
