@@ -164,19 +164,28 @@ Future<void> showShareSheet(BuildContext context, String oppId) {
 
 Future<void> showReqSheet(BuildContext context) {
   return _openSheet<void>(context, (ctx) {
-    const who = [('senior', '학과 선배'), ('club', '동아리 선배'), ('peer', '동기')];
+    final mutual = app.mutuals();
     return SheetFrame(title: '밥약 신청하기', children: [
-      const Txt('만나서 말하기 어려울 때, 먼저 정중하게 신청해 보세요.', size: 13, muted: true),
-      Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Lbl('누구에게 신청할까요?'),
-        const SizedBox(height: 8),
-        ChipGrid(cols: 3, children: [for (final w in who) PillChip(w.$2, expand: true, on: app.reqWho == w.$1, onTap: () => app.reqSetWho(w.$1))]),
-      ]),
+      const Txt('맞팔한 친구에게만 신청할 수 있어요. 만나서 말하기 어려울 때 먼저 정중하게 보내 보세요.', size: 13, muted: true),
+      AppCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: mutual.isEmpty
+            ? const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Txt('맞팔한 친구가 아직 없어요. 내 정보에서 팔로우해 보세요.', muted: true, align: TextAlign.center))
+            : Column(children: [
+                for (var i = 0; i < mutual.length; i++)
+                  PersonRow(
+                    first: i == 0,
+                    avatar: Avatar(kFriends[mutual[i]].n[0], style: pal(ctx).types[kFriends[mutual[i]].t]),
+                    name: kFriends[mutual[i]].n,
+                    sub: kFriends[mutual[i]].d,
+                    trailing: AppSwitch(on: app.reqPicked.contains(mutual[i]), label: '${kFriends[mutual[i]].n}에게 신청', onTap: () => app.reqTogglePick(mutual[i])),
+                  ),
+              ]),
+      ),
       Field('보낼 메시지', child: AppInput(controller: app.reqMsgC, maxLines: 4)),
       SwitchCard(title: '익명으로 신청하기', sub: '수락하면 이름이 공개돼요', on: app.reqAnon, onTap: app.reqToggleAnon),
       Btn('신청 보내기', onTap: () {
-        Navigator.of(ctx).pop();
-        app.reqSend();
+        if (app.reqSend()) Navigator.of(ctx).pop();
       }),
     ]);
   });
