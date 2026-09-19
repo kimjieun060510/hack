@@ -68,15 +68,18 @@ void main() {
 
     await tester.tap(find.text('밥약').first);
     await tester.pump();
-    await tester.tap(find.text('밥약 보내기').first);
-    await tester.pump();
+    expect(find.text('밥약 찾기'), findsWidgets);
 
-    final openReq = find.text('밥약 신청하기');
+    await tester.tap(find.text('밥약 보내기'));
+    await tester.pump();
+    expect(find.text('누구와 먹을까요?'), findsOneWidget);
+
+    final openReq = find.textContaining('밥약 신청하기');
     await tester.ensureVisible(openReq);
     await tester.tap(openReq);
     await tester.pumpAndSettle();
 
-    expect(find.text('누구에게 신청할까요?'), findsOneWidget);
+    expect(find.textContaining('누구에게 신청할까요?'), findsOneWidget);
     expect(find.text('김민준'), findsWidgets);
     expect(find.text('이서연'), findsWidgets);
     expect(find.text('박지훈'), findsWidgets);
@@ -92,5 +95,6 @@ void main() {
     await tester.tap(find.text('2명에게 신청 보내기'));
     await tester.pump();
     expect(find.text('김민준, 이서연에게 밥약 신청을 보냈어요. 답장이 오면 배너로 알려드려요'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 2500));
   });
 }
