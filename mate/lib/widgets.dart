@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'sheets.dart';
 import 'state.dart';
 import 'theme.dart';
+import 'feeds.dart';
 
 /// 여러 화면이 같이 쓰는 작은 부품(버튼, 칩, 카드, 머리글 등)이에요.
 
@@ -532,6 +533,35 @@ class SwitchCard extends StatelessWidget {
       child: Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Txt(title, bold: true, size: 15), Txt(sub, size: 12, muted: true)])),
         AppSwitch(on: on, onTap: onTap, label: title),
+      ]),
+    );
+  }
+}
+
+/// 소식을 가져올 곳 한 줄. 켜면 학교·학과는 홈페이지를 읽고, 아이캠퍼스·에타는 연동 전 예시를 넣어요.
+class SourceCard extends StatelessWidget {
+  final FeedDef s;
+  const SourceCard({super.key, required this.s});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    final on = app.conn[s.id] ?? false;
+    final st = app.feedStatus[s.id];
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Txt(s.name, bold: true, size: 15),
+            Txt(s.sub, size: 12, muted: true),
+            if (st != null && st.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(st, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: p.priText)),
+            ],
+          ]),
+        ),
+        AppSwitch(on: on, onTap: () => app.toggleConn(s.id), label: s.name),
       ]),
     );
   }

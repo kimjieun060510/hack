@@ -7,7 +7,7 @@ import '../theme.dart';
 import '../widgets.dart';
 
 /// 추천 탭: 관심사에 맞는 소식을 모아 보여주고, 누르면 달력에 마감일이 들어가요.
-/// 제목이나 카드를 누르면 원문 사이트가 열려요 (주소는 data.dart 의 kOpps).
+/// 학교·학과 공지는 공개 홈페이지에서 가져오고, 제목을 누르면 원문이 열려요.
 
 const Map<String, String> _catStyle = {'schol': 'job', 'lab': 'class', 'vol': 'meet', 'club': 'dept'};
 
@@ -25,13 +25,36 @@ class RecoScreen extends LiveView {
       }
     }
     final rest = list.where((o) => o != feat).toList();
-    final srcs = ['아이캠퍼스', if (app.conn['dept'] == true) '학과 홈페이지', if (app.conn['etta'] == true) '에타'].join(' · ');
+    final srcs = app.feedLine();
 
     return Column(children: [
-      SafeArea(bottom: false, child: BackHeader('', titleWidget: Text('추천', style: disp(32, pal(context).ink, height: 1.2)))),
+      SafeArea(
+        bottom: false,
+        child: BackHeader(
+          '',
+          titleWidget: Text('추천', style: disp(32, pal(context).ink, height: 1.2)),
+          actions: [
+            Semantics(
+              button: true,
+              label: '소식 새로고침',
+              child: InkWell(
+                onTap: app.syncing ? null : () => app.syncFeeds(),
+                customBorder: const CircleBorder(),
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: app.syncing
+                      ? Padding(padding: const EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2.5, color: pal(context).pri))
+                      : Icon(icon('refresh'), color: pal(context).ink),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       Expanded(
         child: Body(children: [
-          Txt('$srcs에서 내 관심사에 맞는 소식만 모았어요.', size: 13, muted: true),
+          Txt(srcs, size: 13, muted: true),
           Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const SectionHead('달력에 띄울 분야', trailing: '눌러서 켜고 끄기'),
             const SizedBox(height: 10),

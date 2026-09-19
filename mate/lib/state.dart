@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'data.dart';
+import 'feeds.dart';
 
 /// 앱의 모든 상태와 "버튼을 눌렀을 때 일어나는 일"이 들어 있는 파일이에요.
 /// 화면(screens/*.dart)은 여기 있는 app 을 읽고, 버튼에서 app.○○() 를 불러요.
@@ -62,6 +63,9 @@ class AppState extends ChangeNotifier {
 
   int _uid = 100;
   Timer? _toastT, _bannerT, _searchT;
+  final FeedClient feeds = FeedClient();
+  int _syncGen = 0;
+  bool _syncedOnce = false;
 
   // ---- 화면 상태
   /// 지금 보이는 화면: login | verify | interest | home | cal | reco | meal | meet | play | plans | me
@@ -88,7 +92,10 @@ class AppState extends ChangeNotifier {
   bool autoLogin = false, showPw = false;
 
   late List<Ev> events;
+  late List<Opp> opps;
   late Map<String, bool> cats, fields, conn;
+  final Map<String, String> feedStatus = {};
+  bool syncing = false;
   late List<CustomType> customTypes;
   late List<Notif> notifs;
   late List<MeetPost> meetPosts;
@@ -150,7 +157,14 @@ class AppState extends ChangeNotifier {
     events = _initialEvents();
     cats = {'edu': true, 'schol': true, 'lab': true, 'vol': true, 'club': true};
     fields = {'개발·IT': true, '경영·마케팅': true};
-    conn = {'icampus': true, 'dept': true, 'etta': true};
+    conn = {'icampus': true, 'school': true, 'dept': true, 'etta': true};
+    opps = List.of(kOpps);
+    feedStatus
+      ..clear()
+      ..addEntries(kFeedSources.map((s) => MapEntry(s.id, s.needsLogin ? '로그인 연동 전 · 예시 데이터' : '아직 가져오지 않았어요')));
+    syncing = false;
+    _syncedOnce = false;
+    _syncGen++;
     customTypes = [];
     notifs = [
       Notif('n1', 'sparkle', '새 기회 2개가 도착했어요', '관심 분야에 맞는 공고예요', 'reco'),
@@ -293,8 +307,7 @@ class AppState extends ChangeNotifier {
     if (e.src == 'icampus' && conn['icampus'] != true) return false;
     if (e.type == 'opp') {
       if (cats[e.cat] != true) return false;
-      if (e.g == 'etta' && conn['etta'] != true) return false;
-      if (e.g == 'dept' && conn['dept'] != true) return false;
+      if (conn[e.g] == false) return false;
     }
     return true;
   }
@@ -357,7 +370,66 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  List<Opp> recoList() => kOpps.where((o) => cats[o.cat] == true && (o.g != 'etta' || conn['etta'] == true) && (o.g != 'dept' || conn['dept'] == true)).toList();
+  List<Opp> recoList() => opps.where((o) => cats[o.cat] == true && conn[o.g] != false).toList();
+
+  Opp? findOpp(String id) {
+    for (final o in opps) {
+      if (o.id == id) return o;
+    }
+    for (final o in kOpps) {
+      if (o.id == id) return o;
+    }
+    return null;
+  }
+
+  /// 켜 둔 곳에서 소식을 모아요. 학교·학과는 공개 홈페이지, 나머지는 연동 전 예시.
+  Future<void> syncFeeds({String? only}) async {
+    final gen = ++_syncGen;
+    syncing = true;
+    _n();
+    final targets = kFeedSources.where((s) => (only == null || s.id == only) && conn[s.id] == true).toList();
+    var net = 0, snap = 0;
+    for (final def in targets) {
+      try {
+        final bundle = await feeds.load(def);
+        if (gen != _syncGen) return;
+        if (def.id != 'icampus') _replaceOpps(def.id, bundle.opps);
+        feedStatus[def.id] = bundle.status;
+        if (bundle.fromNetwork) {
+          net += bundle.opps.length;
+        } else {
+          snap += bundle.opps.length;
+        }
+      } catch (_) {
+        if (gen != _syncGen) return;
+        feedStatus[def.id] = '가져오지 못했어요. 잠시 뒤 다시 눌러 주세요';
+      }
+    }
+    if (gen != _syncGen) return;
+    syncing = false;
+    _n();
+    if (only != null) {
+      showToast(feedStatus[only] ?? '가져왔어요');
+    } else if (net > 0) {
+      showToast('공개 공지 $net건을 홈페이지에서 가져왔어요');
+    } else if (snap > 0) {
+      showToast('지금은 저장해 둔 공지로 보여요 (웹은 CORS, 폰에서는 바로 가져와요)');
+    }
+  }
+
+  void _replaceOpps(String sourceId, List<Opp> next) {
+    opps.removeWhere((o) => o.g == sourceId);
+    opps.addAll(next);
+  }
+
+  String feedLine() {
+    final parts = <String>[];
+    for (final s in kFeedSources) {
+      if (conn[s.id] != true) continue;
+      parts.add(s.name);
+    }
+    return parts.isEmpty ? '가져온 곳을 켜 주세요' : '${parts.join(' · ')}에서 소식을 모아요.';
+  }
 
   // 밥약 도우미
   String mealAt() => (meal.date == kToday ? '' : '${shortDate(meal.date)} ') + meal.time;
@@ -461,7 +533,14 @@ class AppState extends ChangeNotifier {
       _hist.add(screen);
       screen = s;
     }
+    if (screen == 'reco' || screen == 'me' || screen == 'cal') _kickSync();
     _n();
+  }
+
+  void _kickSync() {
+    if (_syncedOnce || syncing) return;
+    _syncedOnce = true;
+    syncFeeds();
   }
 
   bool _isSocial(String x) => x == 'meal' || x == 'meet' || x == 'play';
@@ -470,6 +549,7 @@ class AppState extends ChangeNotifier {
   void switchTab(String s) {
     _clearOverlays();
     screen = s;
+    if (s == 'reco' || s == 'cal') _kickSync();
     _n();
   }
 
@@ -485,6 +565,7 @@ class AppState extends ChangeNotifier {
     _hist.clear();
     if (s != 'home') _hist.add('home');
     screen = s;
+    if (s == 'reco' || s == 'me' || s == 'cal') _kickSync();
   }
 
   void resetFlows() {
@@ -628,6 +709,7 @@ class AppState extends ChangeNotifier {
     _hist.clear();
     screen = 'home';
     _n();
+    _kickSync();
   }
 
   void _resetSignup() {
@@ -701,6 +783,7 @@ class AppState extends ChangeNotifier {
     _hist.clear();
     screen = 'home';
     showToast('가입이 끝났어요! 메인화면에서 시작해요');
+    _kickSync();
   }
 
   /// 관심사 고르기 끝. 원래 가려던 화면(달력 · 추천)으로 가요.
@@ -710,6 +793,7 @@ class AppState extends ChangeNotifier {
     _pending = null;
     screen = to;
     showToast('끝났어요! 이제 앱이 알아서 소식을 모아요');
+    _kickSync();
   }
 
   /// 관심사는 나중에 (내 정보에서 다시 고를 수 있어요)
@@ -718,6 +802,7 @@ class AppState extends ChangeNotifier {
     final to = _pending ?? 'cal';
     _pending = null;
     screen = to;
+    _kickSync();
     _n();
   }
 
@@ -740,6 +825,7 @@ class AppState extends ChangeNotifier {
   void toggleConn(String k) {
     conn[k] = !(conn[k] ?? false);
     _n();
+    if (conn[k] == true) syncFeeds(only: k);
   }
 
   // ------------------------------------------------------------ 달력
@@ -766,7 +852,8 @@ class AppState extends ChangeNotifier {
   }
 
   void toggleOpp(String id) {
-    final o = kOpps.firstWhere((x) => x.id == id);
+    final o = findOpp(id);
+    if (o == null) return;
     if (isAdded(id)) {
       events.removeWhere((e) => e.id == 'opp-$id');
       showToast('달력에서 뺐어요');

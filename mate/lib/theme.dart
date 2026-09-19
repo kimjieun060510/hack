@@ -254,6 +254,8 @@ IconData icon(String name) {
       return Icons.sticky_note_2_outlined;
     case 'search':
       return Icons.search;
+    case 'refresh':
+      return Icons.refresh;
     case 'image':
       return Icons.image_outlined;
     default:

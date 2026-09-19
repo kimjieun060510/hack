@@ -1,0 +1,91 @@
+{
+  "sourceId": "dept",
+  "loginRequired": false,
+  "capturedFrom": "https://cse.skku.edu/cse/notice.do",
+  "items": [
+    {
+      "id": "224174",
+      "title": "[졸업평가] 연구논문작품 신청서 제출 방법 안내 (*대상자만 / 9.14월~9.27일)",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=224174",
+      "posted": "2026-08-26",
+      "categoryRaw": "학사"
+    },
+    {
+      "id": "224173",
+      "title": "[졸업평가] 연구논문작품 서약서, 제안서 및 중간보고서 제출 안내 (*대상자만 / 9.14월~9.27일)",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=224173",
+      "posted": "2026-08-26",
+      "categoryRaw": "학사"
+    },
+    {
+      "id": "225778",
+      "title": "(주)플루빗 2026 신입 지상시스템 엔지니어 모집",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225778",
+      "posted": "2026-09-18",
+      "categoryRaw": "채용/모집"
+    },
+    {
+      "id": "225776",
+      "title": "2026 ICPC 대학생 프로그래밍 경시대회 안내",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225776",
+      "posted": "2026-09-18",
+      "categoryRaw": "행사/세미나"
+    },
+    {
+      "id": "225764",
+      "title": "(주)신세계아이앤씨 27년 신입사원 채용",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225764",
+      "posted": "2026-09-18",
+      "categoryRaw": "채용/모집"
+    },
+    {
+      "id": "225737",
+      "title": "2026-2학기 대학원 한마당 및 소프트웨어학과 오픈랩 안내 (9/28(월)~10/2(금))",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225737",
+      "posted": "2026-09-17",
+      "categoryRaw": "행사/세미나"
+    },
+    {
+      "id": "225722",
+      "title": "[한국능률협회] 미래내일 IT 프로젝트 참여자 모집",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225722",
+      "posted": "2026-09-17",
+      "categoryRaw": "채용/모집"
+    },
+    {
+      "id": "225702",
+      "title": "When Language Meets 3D: Language-Grounded Perception and Reasoning(15:00 - 16:00, Sep 29, 2026)",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225702",
+      "posted": "2026-09-17",
+      "categoryRaw": ""
+    },
+    {
+      "id": "225684",
+      "title": "2026 NC문화재단 프로젝토리 크루(인턴) 채용 공고 (~9/30)",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225684",
+      "posted": "2026-09-16",
+      "categoryRaw": "채용/모집"
+    },
+    {
+      "id": "225681",
+      "title": "[CJ제일제당] 2026 하반기 신입사원 모집 (~9/30)",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225681",
+      "posted": "2026-09-16",
+      "categoryRaw": "채용/모집"
+    },
+    {
+      "id": "225632",
+      "title": "Metacognition for Self-Improving Agents: Who Judges the Judge, Who Improves the Improver(9/22 10:00)",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225632",
+      "posted": "2026-09-16",
+      "categoryRaw": "행사/세미나"
+    },
+    {
+      "id": "225627",
+      "title": "[티맥스티베로] sysMasterDB프론트엔드 개발, DBaaS Backend 연구 및 개발, DB엔진 연구 및 개발 채용공고",
+      "url": "https://cse.skku.edu/cse/notice.do?mode=view&articleNo=225627",
+      "posted": "2026-09-16",
+      "categoryRaw": "채용/모집"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data.dart';
+import '../feeds.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -185,11 +186,7 @@ class InterestScreen extends LiveView {
   @override
   Widget body(BuildContext context) {
     final p = pal(context);
-    const src = [
-      ('icampus', '아이캠퍼스', '수업 시간표와 과제 마감을 자동으로 가져와요'),
-      ('dept', '학과 홈페이지', '공지·비교과·장학금·산학협력 소식을 모아와요'),
-      ('etta', '에브리타임', '내 계정으로, 내 폰에서만 불러와서 나 혼자 봐요'),
-    ];
+    const src = kFeedSources;
     return Backdrop(
       leaves: false,
       child: SafeArea(
@@ -214,7 +211,7 @@ class InterestScreen extends LiveView {
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 const Lbl('소식을 가져올 곳'),
                 const SizedBox(height: 8),
-                ...gapped([for (final s in src) SwitchCard(title: s.$2, sub: s.$3, on: app.conn[s.$1] ?? false, onTap: () => app.toggleConn(s.$1))], 8),
+                ...gapped([for (final s in src) SourceCard(s: s)], 8),
               ]),
             ]),
           ),

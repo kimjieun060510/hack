@@ -128,7 +128,7 @@ class _AddSheetState extends State<_AddSheet> {
 Future<void> showShareSheet(BuildContext context, String oppId) {
   app.openShare(oppId);
   return _openSheet<void>(context, (ctx) {
-    final o = kOpps.firstWhere((x) => x.id == app.shareOpp, orElse: () => kOpps.first);
+    final o = app.findOpp(app.shareOpp) ?? (app.opps.isNotEmpty ? app.opps.first : kOpps.first);
     final n = app.shareCount();
     return SheetFrame(title: '친구와 함께 신청', children: [
       AppCard(

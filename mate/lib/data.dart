@@ -48,11 +48,11 @@ class Opp {
 
 const List<Opp> kOpps = [
   Opp('o1', 'https://cse.skku.edu/cse/notice.do', 'edu', 'dept', '학과 홈페이지', '신입생 진로탐색 특강', '9-25', '18:00', '선착순 40명', ['취업·진로']),
-  Opp('o2', 'https://www.skku.edu/skku/campus/skk_comm/notice06.do', 'schol', 'dept', '학과 홈페이지', '교내 장학금 신청 안내', '9-25', '17:00', '성적·소득 기준 확인', []),
-  Opp('o3', 'https://ranbiz.skku.edu/?p=21', 'lab', 'dept', '산학협력단', '산학협력 프로젝트 모집', '9-25', '23:59', '팀 또는 개인 지원', ['개발·IT', '연구·실험']),
+  Opp('o2', 'https://www.skku.edu/skku/campus/skk_comm/notice06.do', 'schol', 'school', '학교 홈페이지', '교내 장학금 신청 안내', '9-25', '17:00', '성적·소득 기준 확인', []),
+  Opp('o3', 'https://ranbiz.skku.edu/?p=21', 'lab', 'school', '산학협력단', '산학협력 프로젝트 모집', '9-25', '23:59', '팀 또는 개인 지원', ['개발·IT', '연구·실험']),
   Opp('o4', 'https://cse.skku.edu/cse/notice.do', 'edu', 'dept', '소프트웨어학과', 'AI 아이디어톤 참가팀 모집', '9-27', '23:59', '팀 구성 필수', ['개발·IT']),
-  Opp('o5', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'vol', 'dept', '학생지원팀', '지역 아동센터 교육 봉사자 모집', '9-28', '17:00', '주 1회 · 교육 멘토링', []),
-  Opp('o7', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'edu', 'dept', '교양대학', '인문학 특강 시리즈', '10-1', '23:59', '전 학년 · 오프라인 특강', []),
+  Opp('o5', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'vol', 'school', '학교 홈페이지', '지역 아동센터 교육 봉사자 모집', '9-28', '17:00', '주 1회 · 교육 멘토링', []),
+  Opp('o7', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'edu', 'school', '학교 홈페이지', '인문학 특강 시리즈', '10-1', '23:59', '전 학년 · 오프라인 특강', []),
   Opp('o6', 'https://everytime.kr', 'club', 'etta', '에타', '해커톤 팀원 모집', '9-22', '23:59', '디자이너·기획자 환영', ['개발·IT', '디자인']),
 ];
 
