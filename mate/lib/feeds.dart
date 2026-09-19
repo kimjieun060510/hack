@@ -259,6 +259,9 @@ SnapshotDoc parseSnapshot(String jsonText) {
 class FeedClient {
   FeedClient({http.Client? httpClient, this.loadAsset}) : _http = httpClient ?? http.Client();
 
+  /// 위젯 테스트에서는 실제 학교 홈페이지를 치지 않아요.
+  static bool allowNetwork = true;
+
   final http.Client _http;
   final Future<String> Function(String asset)? loadAsset;
 
@@ -268,7 +271,7 @@ class FeedClient {
   }
 
   Future<FeedBundle> load(FeedDef def) async {
-    if (def.canFetchLive) {
+    if (def.canFetchLive && allowNetwork) {
       try {
         final html = await _http
             .get(

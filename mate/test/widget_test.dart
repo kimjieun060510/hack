@@ -6,12 +6,34 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mate/feeds.dart';
 import 'package:mate/main.dart';
+import 'package:mate/state.dart';
 
 void main() {
+  setUpAll(() {
+    FeedClient.allowNetwork = false;
+  });
+
   testWidgets('앱이 열리고 첫 화면(로그인)이 보여요', (tester) async {
     await tester.pumpWidget(const MateApp());
     expect(find.text('로그인'), findsWidgets);
     expect(find.text('회원가입 / 인증'), findsOneWidget);
+  });
+
+  testWidgets('로그인 뒤 내 정보에서 가져올 곳 네 가지가 보여요', (tester) async {
+    await tester.pumpWidget(const MateApp());
+    app.idC.text = '2026123456';
+    app.pwC.text = 'demo';
+    app.login();
+    await tester.pump();
+    expect(find.text('밥약'), findsOneWidget);
+    app.open('me');
+    await tester.pump();
+    expect(find.text('학교 홈페이지'), findsWidgets);
+    expect(find.text('학과 홈페이지'), findsWidgets);
+    expect(find.text('아이캠퍼스'), findsWidgets);
+    expect(find.text('에브리타임'), findsWidgets);
+    expect(find.text('지금 가져오기'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
   });
 
   test('성균관대 공지 HTML에서 제목·날짜·글번호를 뽑아요', () {
@@ -51,6 +73,8 @@ void main() {
   });
 
   test('공개 게시판 HTML을 가져오면 네트워크 결과로 표시해요', () async {
+    FeedClient.allowNetwork = true;
+    addTearDown(() => FeedClient.allowNetwork = false);
     final html = File('test/fixtures/skku_board.html').readAsStringSync();
     final client = FeedClient(
       httpClient: MockClient((req) async {
