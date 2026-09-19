@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'sheets.dart';
@@ -657,30 +658,36 @@ class Spinner extends StatelessWidget {
 
 class AppInput extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final String hint;
   final int maxLength;
   final int maxLines;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
   final String? prefix; // 앞에 붙일 아이콘 이름
   final Widget? suffix;
   final bool obscure;
   final bool pill; // 시안의 둥근 입력칸
+  final bool autocorrect;
   final TextInputAction? action;
   const AppInput({
     super.key,
     required this.controller,
+    this.focusNode,
     this.hint = '',
     this.maxLength = 0,
     this.maxLines = 1,
     this.keyboardType,
+    this.inputFormatters,
     this.onSubmitted,
     this.onChanged,
     this.prefix,
     this.suffix,
     this.obscure = false,
     this.pill = false,
+    this.autocorrect = true,
     this.action,
   });
 
@@ -691,11 +698,16 @@ class AppInput extends StatelessWidget {
     OutlineInputBorder b(Color c, double w) => OutlineInputBorder(borderRadius: BorderRadius.circular(r), borderSide: BorderSide(color: c, width: w));
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       maxLines: obscure ? 1 : maxLines,
       minLines: obscure ? 1 : maxLines,
       obscureText: obscure,
+      autocorrect: autocorrect && !obscure,
+      enableSuggestions: autocorrect && !obscure,
       keyboardType: keyboardType,
       textInputAction: action,
+      textCapitalization: TextCapitalization.none,
+      inputFormatters: inputFormatters,
       maxLength: maxLength == 0 ? null : maxLength,
       buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
       onSubmitted: onSubmitted,
