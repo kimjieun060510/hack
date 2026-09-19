@@ -63,15 +63,24 @@ class AppState extends ChangeNotifier {
   }
 
   int _uid = 100;
-  Timer? _toastT, _bannerT, _searchT, _loginT;
+  Timer? _toastT, _bannerT, _searchT, _loginT, _signupT;
 
   // ---- 로그인 (채널톡 연동 전 · 된 척만)
   bool loggedIn = false;
   bool autoLogin = false;
   bool loginObscure = true;
   bool loginBusy = false;
+  String authPage = 'login'; // login | signup
   final studentIdC = TextEditingController();
   final passwordC = TextEditingController();
+
+  // ---- 회원가입
+  String signupPhoto = 'idle'; // idle | scanning | done
+  String signupGender = 'm'; // m | f
+  bool signupBusy = false;
+  final signupNameC = TextEditingController();
+  final signupIdC = TextEditingController();
+  final signupDeptC = TextEditingController();
 
   // ---- 화면 상태
   int? onboard; // 0 인증, 1 관심사, null 이면 메인 화면. 로그인이 먼저라 시작은 null.
@@ -119,8 +128,15 @@ class AppState extends ChangeNotifier {
     autoLogin = false;
     loginObscure = true;
     loginBusy = false;
+    authPage = 'login';
     studentIdC.clear();
     passwordC.clear();
+    signupPhoto = 'idle';
+    signupGender = 'm';
+    signupBusy = false;
+    signupNameC.clear();
+    signupIdC.clear();
+    signupDeptC.clear();
     onboard = null;
     verify = 'idle';
     tab = 'cal';
@@ -405,7 +421,13 @@ class AppState extends ChangeNotifier {
 
   /// 안드로이드 뒤로가기. 처리했으면 true, 앱을 나가도 되면 false.
   bool back() {
-    if (!loggedIn) return false;
+    if (!loggedIn) {
+      if (authPage == 'signup') {
+        backToLogin();
+        return true;
+      }
+      return false;
+    }
     if (push) {
       push = false;
       _n();
@@ -442,6 +464,7 @@ class AppState extends ChangeNotifier {
     if (i == 0) {
       loggedIn = false;
       loginBusy = false;
+      authPage = 'login';
       onboard = null;
       verify = 'idle';
       _n();
@@ -467,6 +490,7 @@ class AppState extends ChangeNotifier {
     _toastT?.cancel();
     _bannerT?.cancel();
     _loginT?.cancel();
+    _signupT?.cancel();
     _init();
     _n();
   }
@@ -499,15 +523,74 @@ class AppState extends ChangeNotifier {
     });
   }
 
-  /// 회원가입 시안이 오면 이 자리에 화면을 붙입니다.
+  /// 회원가입 시안으로 이동해요. 채널톡 연동은 아직 없습니다.
   void goSignup() {
-    showToast('회원가입 / 인증 화면은 다음 시안에서 이어서 만들게요');
+    _signupT?.cancel();
+    authPage = 'signup';
+    signupPhoto = 'idle';
+    signupBusy = false;
+    signupGender = 'm';
+    signupNameC.clear();
+    signupIdC.clear();
+    signupDeptC.clear();
+    _n();
+  }
+
+  void backToLogin() {
+    _signupT?.cancel();
+    authPage = 'login';
+    signupBusy = false;
+    signupPhoto = 'idle';
+    _n();
+  }
+
+  void setSignupGender(String v) {
+    signupGender = v;
+    _n();
+  }
+
+  /// 카메라/앨범을 실제로 열지 않고, 학생증을 읽은 척한 뒤 예시 값을 채워요.
+  void fakeSignupPhoto() {
+    if (signupPhoto == 'scanning') return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    signupPhoto = 'scanning';
+    _n();
+    _signupT?.cancel();
+    _signupT = Timer(const Duration(milliseconds: 800), () {
+      signupPhoto = 'done';
+      signupNameC.text = '혜인';
+      signupIdC.text = '20231234';
+      signupDeptC.text = '소프트웨어학과';
+      _n();
+    });
+  }
+
+  void submitSignup() {
+    if (signupBusy) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final name = signupNameC.text.trim();
+    final id = signupIdC.text.trim();
+    final dept = signupDeptC.text.trim();
+    if (name.isEmpty || id.isEmpty || dept.isEmpty) {
+      showToast('이름, 학번, 학과를 입력해주세요');
+      return;
+    }
+    signupBusy = true;
+    _n();
+    _signupT?.cancel();
+    _signupT = Timer(const Duration(milliseconds: 450), () {
+      studentIdC.text = id;
+      signupBusy = false;
+      authPage = 'login';
+      showToast('계정이 만들어졌어요. 로그인해주세요');
+    });
   }
 
   void logout() {
     _loginT?.cancel();
     loggedIn = false;
     loginBusy = false;
+    authPage = 'login';
     _n();
   }
 
@@ -973,8 +1056,12 @@ class AppState extends ChangeNotifier {
     _bannerT?.cancel();
     _searchT?.cancel();
     _loginT?.cancel();
+    _signupT?.cancel();
     studentIdC.dispose();
     passwordC.dispose();
+    signupNameC.dispose();
+    signupIdC.dispose();
+    signupDeptC.dispose();
     mealMsgC.dispose();
     addTitleC.dispose();
     addDateC.dispose();

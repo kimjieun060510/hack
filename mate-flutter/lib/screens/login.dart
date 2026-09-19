@@ -1,26 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../auth_ui.dart';
 import '../state.dart';
 import '../widgets.dart';
 
 /// 로그인 화면 (시안 그대로).
 /// 학번/비번 검사는 하지 않아요. 채널톡 연동 전까지는 로그인 버튼을 누르면 들어간 척만 해요.
-/// 회원가입 / 인증 화면은 다음 시안에서 붙입니다.
-
-class AuthUi {
-  static const bg = Color(0xFFF7F4EE);
-  static const blob = Color(0xFFD9EDDF);
-  static const blobSoft = Color(0xFFE7F3EA);
-  static const ink = Color(0xFF1B2420);
-  static const mut = Color(0xFF8A938D);
-  static const line = Color(0xFFE1E7E3);
-  static const mint = Color(0xFFE5F3EA);
-  static const mintBtn = Color(0xFFD2EDDC);
-  static const green = Color(0xFF3E7A55);
-  static const greenDeep = Color(0xFF2F6B48);
-  static const leaf = Color(0xFF9FCBAD);
-}
 
 class LoginScreen extends LiveView {
   const LoginScreen({super.key});

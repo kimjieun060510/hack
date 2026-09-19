@@ -6,6 +6,7 @@ import 'screens/calendar.dart';
 import 'screens/login.dart';
 import 'screens/onboarding.dart';
 import 'screens/reco.dart';
+import 'screens/signup.dart';
 import 'screens/social.dart';
 import 'state.dart';
 import 'theme.dart';
@@ -24,7 +25,7 @@ class Shell extends LiveView {
 
     Widget page;
     if (!app.loggedIn) {
-      page = const LoginScreen();
+      page = app.authPage == 'signup' ? const SignupScreen() : const LoginScreen();
     } else if (app.onboard == 0) {
       page = const VerifyScreen();
     } else if (app.onboard == 1) {
