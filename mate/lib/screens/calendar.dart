@@ -306,6 +306,7 @@ class _EventRow extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${e.title} 수정',
+      explicitChildNodes: true,
       child: Material(
         color: Colors.transparent,
         child: InkWell(

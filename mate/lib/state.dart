@@ -944,7 +944,7 @@ class AppState extends ChangeNotifier {
     if (key == null) return '날짜를 입력해주세요 (예: 9/28, 10/1)';
     final job = addType == 'job';
     final h = job ? hoursBetween(addStart, addEnd) : 0.0;
-    final hours = job ? (h == 0 ? 2 : h) : null;
+    final hours = job ? (h == 0 ? 2.0 : h) : null;
     final title = addTitleC.text.trim();
     final name = title.isEmpty ? typeName(addType) : title;
     final t = addStart.isEmpty ? '18:00' : addStart;
@@ -959,7 +959,7 @@ class AppState extends ChangeNotifier {
         end: addEnd,
         type: addType,
         title: name,
-        sub: job ? '${fmtH(hours ?? 2)}시간 · 직접 입력' : (old.mine ? '직접 입력' : (old.type == addType ? old.sub : '직접 수정')),
+        sub: job ? '${fmtH(hours ?? 2.0)}시간 · 직접 입력' : (old.mine ? '직접 입력' : (old.type == addType ? old.sub : '직접 수정')),
         hours: hours,
         clearHours: !job,
       );
@@ -977,7 +977,7 @@ class AppState extends ChangeNotifier {
       end: addEnd,
       type: addType,
       title: name,
-      sub: job ? '${fmtH(hours ?? 2)}시간 · 직접 입력' : '직접 입력',
+      sub: job ? '${fmtH(hours ?? 2.0)}시간 · 직접 입력' : '직접 입력',
       mine: true,
       hours: hours,
     ));

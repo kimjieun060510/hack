@@ -227,11 +227,11 @@ void main() {
 
   test('달력에 있는 일정의 제목·날짜·시간을 고칠 수 있어요', () {
     app.resetAll();
-    final e = app.events.firstWhere((x) => x.title == '카페 알바' && x.key == '9-21');
+    final e = app.events.firstWhere((x) => x.title == '카페 알바' && x.key == '9-22');
     app.prepareEdit(e);
     expect(app.isEditing, isTrue);
     expect(app.addTitleC.text, '카페 알바');
-    expect(app.addDateC.text, '9/21');
+    expect(app.addDateC.text, '9/22');
     expect(app.addType, 'job');
     app.addTitleC.text = '도서관 알바';
     app.addDateC.text = '10/2';
@@ -259,7 +259,10 @@ void main() {
     app.jump(1);
     await tester.pumpAndSettle();
     expect(find.text('자료구조 과제 2'), findsWidgets);
-    await tester.tap(find.bySemanticsLabel('자료구조 과제 2 수정'));
+    final row = find.bySemanticsLabel('자료구조 과제 2 수정');
+    await tester.ensureVisible(row);
+    await tester.pumpAndSettle();
+    await tester.tap(row);
     await tester.pumpAndSettle();
     expect(find.text('일정 수정'), findsOneWidget);
     expect(find.text('저장'), findsOneWidget);
