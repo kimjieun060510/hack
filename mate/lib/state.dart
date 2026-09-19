@@ -155,7 +155,7 @@ class AppState extends ChangeNotifier {
     autoLogin = false;
     showPw = false;
     events = _initialEvents();
-    cats = {'edu': true, 'schol': true, 'lab': true, 'vol': true, 'club': true};
+    cats = {'acad': true, 'edu': true, 'schol': true, 'lab': true, 'vol': true, 'club': true};
     fields = {'개발·IT': true, '경영·마케팅': true};
     conn = {'icampus': true, 'school': true, 'dept': true, 'etta': true};
     opps = List.of(kOpps);

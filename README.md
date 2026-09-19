@@ -59,8 +59,8 @@ python3 -m http.server 8080
 
 | 가져올 곳 | MVP에서 하는 일 | 나중에 진짜 연동하면 |
 |---|---|---|
-| 학교 홈페이지 | [성균관대 공지](https://www.skku.edu/skku/campus/skk_comm/notice01.do) HTML을 읽어요 | 그대로 두면 됩니다 |
-| 학과 홈페이지 | [소프트웨어학과 공지](https://cse.skku.edu/cse/notice.do) HTML을 읽어요 | 학과만 바꾸면 됩니다 |
+| 학교 홈페이지 | 학부생 장학·비교과만. [전체 공지](https://www.skku.edu/skku/campus/skk_comm/notice01.do) + [장학](https://www.skku.edu/skku/campus/skk_comm/notice06.do). 대학원·조교는 빼요 | 그대로 두면 됩니다 |
+| 학과 홈페이지 | 소프트 **학부** 게시판 4개: [공지](https://cse.skku.edu/cse/notice.do) · [취업/인턴](https://cse.skku.edu/cse/notice_job.do) · [학부연구생](https://cse.skku.edu/cse/notice_recruit.do) · [공모전/대회](https://cse.skku.edu/cse/notice_senimar.do). 대학원 게시판은 읽지 않아요 | 그대로 두면 됩니다 |
 | 아이캠퍼스 | 킹고 SSO가 필요해서 **비밀번호를 받아 긁지 않아요**. `assets/feeds/icampus.json` 예시 시간표·과제 | 학교 LMS/SSO 허가가 나면 그 JSON만 API 응답으로 바꾸면 됩니다 |
 | 에브리타임 | 공식 공개 API가 없어서 게시판을 긁지 않아요. `assets/feeds/etta.json` 예시 글 | 공식 연동 또는 사용자가 동의한 내보내기 |
 

@@ -39,7 +39,7 @@ void main() {
   test('성균관대 공지 HTML에서 제목·날짜·글번호를 뽑아요', () {
     final html = File('test/fixtures/skku_board.html').readAsStringSync();
     final list = SkkuBoardParser.parse(html, baseUrl: 'https://www.skku.edu/skku/campus/skk_comm/notice01.do');
-    expect(list.length, 2);
+    expect(list.length, 3);
     expect(list.first.id, '140050');
     expect(list.first.categoryRaw, '장학');
     expect(list.first.posted, '2026-09-18');
@@ -54,6 +54,20 @@ void main() {
     expect(noticeWhen('날짜 없는 공지', '2026-09-18').key, '9-18');
     expect(noticeCat('장학', '선발 안내'), 'schol');
     expect(noticeCat('동아리', '모집'), 'club');
+    expect(noticeCat('학사', '졸업평가 안내'), 'acad');
+  });
+
+  test('학부생에게 필요한 글만 남기고 대학원·조교는 빼요', () {
+    expect(keepUndergradNotice('2026 ICPC 대학생 프로그래밍 경시대회 안내', '행사/세미나'), isTrue);
+    expect(keepUndergradNotice('[졸업평가] 연구논문작품 신청서 제출 방법 안내', '학사'), isTrue);
+    expect(keepUndergradNotice('2026-2학기 소프트웨어학과 진학설명회 안내', '행사/세미나'), isTrue);
+    expect(keepUndergradNotice('[한국장학재단] 2026학년도 2학기 국가장학금 지급 안내', ''), isTrue);
+    expect(keepUndergradNotice('2027학년도 1학기 新대학원우수장학금 선발 안내', '장학'), isFalse);
+    expect(keepUndergradNotice('사회과학대학 행정조교 모집', '채용/모집'), isFalse);
+    expect(keepUndergradNotice('AI응용공학과(일반대학원) 신입생 모집', '입학'), isFalse);
+    expect(keepUndergradNotice('산학교수 채용', '채용/모집'), isFalse);
+    expect(keepUndergradNotice('2026-2학기 대학원 한마당 및 소프트웨어학과 오픈랩 안내', '행사/세미나'), isFalse);
+    expect(keepUndergradNotice('When Language Meets 3D: Language-Grounded Perception and Reasoning', ''), isFalse);
   });
 
   test('저장해 둔 JSON 공지도 Opp 로 바뀌어요', () {
@@ -86,6 +100,9 @@ void main() {
     final bundle = await client.load(kFeedSources.firstWhere((s) => s.id == 'school'));
     expect(bundle.fromNetwork, isTrue);
     expect(bundle.opps, isNotEmpty);
+    expect(bundle.opps.every((o) => keepUndergradNotice(o.title, o.meta)), isTrue);
+    expect(bundle.opps.any((o) => o.title.contains('ICPC')), isTrue);
+    expect(bundle.opps.any((o) => o.title.contains('대학원우수')), isFalse);
     expect(bundle.opps.first.src, '학교 홈페이지');
   });
 

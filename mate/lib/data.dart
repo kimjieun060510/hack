@@ -31,6 +31,7 @@ const int kMaxCustom = 6;
 
 /// 추천 분야
 const Map<String, String> kCats = {
+  'acad': '학사',
   'edu': '비교과',
   'schol': '장학금',
   'lab': '산학협력',

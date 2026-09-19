@@ -7,15 +7,26 @@ import 'data.dart';
 
 /// 아이캠퍼스 · 학교/학과 홈페이지 · 에브리타임에서 소식을 가져오는 층이에요.
 ///
-/// - 학교·학과 공지: 로그인 없이 볼 수 있는 HTML을 읽어 제목·날짜·링크를 뽑아요.
-/// - 아이캠퍼스·에브리타임: 공식 공개 API가 없고 로그인이 필요해서,
-///   비밀번호를 받아 몰래 긁지 않고 같은 JSON 계약의 예시(스냅샷)를 써요.
-///   나중에 SSO/공식 연동이 되면 [FeedBundle] 만 바꾸면 화면은 그대로예요.
+/// 소프트웨어학과 **학부생**에게 필요한 글만 남깁니다.
+/// 대학원 공지·교수 채용·영어 세미나 포스터는 빼요.
+///
+/// - 학교·학과: 로그인 없이 볼 수 있는 HTML을 읽어요.
+/// - 아이캠퍼스·에브리타임: 공식 공개 API가 없어서 같은 JSON 계약의 예시를 써요.
+
+class FeedBoard {
+  final String url, label;
+  const FeedBoard(this.url, this.label);
+
+  String get baseUrl {
+    final u = Uri.parse(url);
+    return '${u.scheme}://${u.host}${u.path}';
+  }
+}
 
 class FeedDef {
   final String id, name, sub;
   final bool needsLogin;
-  final String? liveUrl;
+  final List<FeedBoard> boards;
   final String snapshotAsset;
   const FeedDef({
     required this.id,
@@ -23,10 +34,10 @@ class FeedDef {
     required this.sub,
     required this.needsLogin,
     required this.snapshotAsset,
-    this.liveUrl,
+    this.boards = const [],
   });
 
-  bool get canFetchLive => liveUrl != null && !needsLogin;
+  bool get canFetchLive => boards.isNotEmpty && !needsLogin;
 }
 
 /// 관심사 고르기 · 내 정보에서 같이 쓰는 목록
@@ -34,25 +45,33 @@ const List<FeedDef> kFeedSources = [
   FeedDef(
     id: 'icampus',
     name: '아이캠퍼스',
-    sub: '시간표·과제는 킹고 로그인이 필요해요. 지금은 연동 전 예시를 써요.',
+    sub: '학부 시간표·과제는 킹고 로그인이 필요해요. 지금은 연동 전 예시를 써요.',
     needsLogin: true,
     snapshotAsset: 'assets/feeds/icampus.json',
   ),
   FeedDef(
     id: 'school',
     name: '학교 홈페이지',
-    sub: '성균관대 전체 공지를 공개 게시판에서 가져와요.',
+    sub: '학부생 장학·비교과·공모만 가져와요. 대학원·조교 공지는 빼요.',
     needsLogin: false,
-    liveUrl: 'https://www.skku.edu/skku/campus/skk_comm/notice01.do?mode=list',
     snapshotAsset: 'assets/feeds/school.json',
+    boards: [
+      FeedBoard('https://www.skku.edu/skku/campus/skk_comm/notice01.do?mode=list&articleLimit=20', '학교 공지'),
+      FeedBoard('https://www.skku.edu/skku/campus/skk_comm/notice06.do?mode=list&articleLimit=20', '학교 장학'),
+    ],
   ),
   FeedDef(
     id: 'dept',
     name: '학과 홈페이지',
-    sub: '소프트웨어학과 공지를 공개 게시판에서 가져와요.',
+    sub: '소프트 학부 공지·취업·학부연구생·공모전만 가져와요.',
     needsLogin: false,
-    liveUrl: 'https://cse.skku.edu/cse/notice.do?mode=list',
     snapshotAsset: 'assets/feeds/dept.json',
+    boards: [
+      FeedBoard('https://cse.skku.edu/cse/notice.do?mode=list&articleLimit=20', '학부 공지'),
+      FeedBoard('https://cse.skku.edu/cse/notice_job.do?mode=list&articleLimit=20', '취업·인턴'),
+      FeedBoard('https://cse.skku.edu/cse/notice_recruit.do?mode=list&articleLimit=20', '학부연구생'),
+      FeedBoard('https://cse.skku.edu/cse/notice_senimar.do?mode=list&articleLimit=20', '공모전·대회'),
+    ],
   ),
   FeedDef(
     id: 'etta',
@@ -97,8 +116,8 @@ class FeedBundle {
   String get status {
     final n = opps.length;
     if (loginPending) return '로그인 연동 전 · 예시 $n건';
-    if (fromNetwork) return '방금 홈페이지에서 $n건 가져왔어요';
-    return '저장해 둔 공지 $n건 (네트워크가 안 될 때)';
+    if (fromNetwork) return '학부생 공지 $n건을 방금 가져왔어요';
+    return '저장해 둔 학부 공지 $n건 (네트워크가 안 될 때)';
   }
 }
 
@@ -136,7 +155,15 @@ class SkkuBoardParser {
 
   static String _plain(String raw) {
     var t = raw.replaceAll(RegExp(r'<[^>]+>'), ' ');
-    t = t.replaceAll('&amp;', '&').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&#39;', "'");
+    t = t
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#039;', "'")
+        .replaceAll('&#39;', "'")
+        .replaceAll('&#034;', '"')
+        .replaceAll('&nbsp;', ' ');
     return t.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 }
@@ -145,7 +172,7 @@ class SkkuBoardParser {
 ({String key, String time}) noticeWhen(String title, String posted) {
   final dates = <(int, int)>[];
   for (final m in RegExp(r'(?:20)?(\d{2})?[.\-/년]?\s*(\d{1,2})[.\-/월]\s*(\d{1,2})').allMatches(title)) {
-    var month = int.tryParse(m.group(2) ?? '');
+    final month = int.tryParse(m.group(2) ?? '');
     final day = int.tryParse(m.group(3) ?? '');
     if (month == null || day == null || month < 1 || month > 12 || day < 1 || day > 31) continue;
     dates.add((month, day));
@@ -168,11 +195,78 @@ String? postedToKey(String posted) {
   return '${int.parse(m.group(1)!)}-${int.parse(m.group(2)!)}';
 }
 
+/// 학부생에게 필요한 글만 true. 대학원·교원·조교·영어 세미나 포스터는 false.
+bool keepUndergradNotice(String title, String category) {
+  final text = '$category $title';
+  if (text.contains('진학설명') || text.contains('학부연구')) return true;
+  const drop = [
+    '대학원',
+    '석사',
+    '박사',
+    '학위과',
+    '일반대학원',
+    '전문대학원',
+    '법학전문',
+    '산학교수',
+    '전임교원',
+    '교수 채용',
+    '중장년',
+    '평생대학',
+    '행정조교',
+    '한마당',
+    '오픈랩',
+    'BK21',
+    '학위수여식',
+    'Call for Proposals',
+  ];
+  for (final d in drop) {
+    if (text.contains(d)) return false;
+  }
+  final ko = RegExp(r'[가-힣]').allMatches(title).length;
+  final en = RegExp(r'[A-Za-z]').allMatches(title).length;
+  if (en >= 20 && ko < 8) return false;
+  return true;
+}
+
+/// 데모 기준일(9/21) 근처에 아직 쓸 만한 글인가.
+bool isFreshNotice(String title, String posted) {
+  if (posted.compareTo('2026-08-01') >= 0) return true;
+  if (posted.isEmpty) return true;
+  return diffDays(noticeWhen(title, posted).key) >= -3;
+}
+
+List<RawNotice> selectUndergradNotices(Iterable<RawNotice> raw) {
+  final seen = <String>{};
+  final out = <RawNotice>[];
+  for (final n in raw) {
+    if (!seen.add(n.id)) continue;
+    if (!keepUndergradNotice(n.title, n.categoryRaw)) continue;
+    if (!isFreshNotice(n.title, n.posted)) continue;
+    out.add(n);
+  }
+  out.sort((a, b) {
+    int rank(RawNotice n) {
+      final t = '${n.categoryRaw} ${n.title}';
+      if (t.contains('학사') || t.contains('졸업')) return 0;
+      if (t.contains('장학')) return 1;
+      if (t.contains('인턴') || t.contains('공모') || t.contains('대회')) return 2;
+      return 3;
+    }
+
+    final r = rank(a).compareTo(rank(b));
+    if (r != 0) return r;
+    return b.posted.compareTo(a.posted);
+  });
+  if (out.length > 24) return out.sublist(0, 24);
+  return out;
+}
+
 String noticeCat(String raw, String title) {
   final t = '$raw $title';
   if (t.contains('장학')) return 'schol';
   if (t.contains('봉사')) return 'vol';
-  if (t.contains('산학') || t.contains('연구') || (t.contains('인턴') && t.contains('랩'))) return 'lab';
+  if (t.contains('학사') || t.contains('수강') || t.contains('졸업')) return 'acad';
+  if (t.contains('산학') || t.contains('학부연구') || (t.contains('인턴') && t.contains('랩'))) return 'lab';
   if (t.contains('동아리')) return 'club';
   return 'edu';
 }
@@ -182,7 +276,8 @@ List<String> noticeFields(String title) {
   if (RegExp(r'AI|IT|개발|프로그래밍|소프트웨어|SW|코딩|엔지니어').hasMatch(title)) out.add('개발·IT');
   if (RegExp(r'디자인').hasMatch(title)) out.add('디자인');
   if (RegExp(r'경영|마케팅').hasMatch(title)) out.add('경영·마케팅');
-  if (RegExp(r'채용|인턴|진로|취업').hasMatch(title)) out.add('취업·진로');
+  if (RegExp(r'채용|인턴|진로|취업|공모|대회').hasMatch(title)) out.add('취업·진로');
+  if (RegExp(r'연구|학부연구').hasMatch(title)) out.add('연구·실험');
   return out;
 }
 
@@ -212,7 +307,7 @@ Opp noticeToOpp(RawNotice n, String sourceId) {
     n.title,
     when.key,
     when.time,
-    n.categoryRaw.isEmpty ? '공지' : n.categoryRaw,
+    n.categoryRaw.isEmpty ? '학부 공지' : n.categoryRaw,
     noticeFields(n.title),
   );
 }
@@ -235,6 +330,7 @@ SnapshotDoc parseSnapshot(String jsonText) {
     final title = m['title'] as String? ?? '';
     final posted = m['posted'] as String? ?? '';
     final catRaw = m['categoryRaw'] as String? ?? '';
+    if (!keepUndergradNotice(title, catRaw)) continue;
     final when = m['key'] is String ? (key: m['key'] as String, time: (m['t'] as String?) ?? '23:59') : noticeWhen(title, posted);
     final rawId = m['id'] as String? ?? 'x';
     final id = rawId.contains('-') ? rawId : 'feed-$sourceId-$rawId';
@@ -247,7 +343,7 @@ SnapshotDoc parseSnapshot(String jsonText) {
       title,
       when.key,
       when.time,
-      (m['meta'] as String?) ?? (catRaw.isEmpty ? '공지' : catRaw),
+      (m['meta'] as String?) ?? (catRaw.isEmpty ? '학부 공지' : catRaw),
       ((m['fields'] as List?) ?? noticeFields(title)).cast<String>(),
     ));
   }
@@ -270,23 +366,32 @@ class FeedClient {
     return rootBundle.loadString(path);
   }
 
+  Future<String> _getHtml(String url) async {
+    final r = await _http
+        .get(
+          Uri.parse(url),
+          headers: const {
+            'User-Agent': 'mate-mvp/1.0 (hackathon public notice reader)',
+            'Accept': 'text/html',
+          },
+        )
+        .timeout(const Duration(seconds: 8));
+    if (r.statusCode != 200) throw Exception('status ${r.statusCode}');
+    return utf8.decode(r.bodyBytes);
+  }
+
   Future<FeedBundle> load(FeedDef def) async {
     if (def.canFetchLive && allowNetwork) {
       try {
-        final html = await _http
-            .get(
-              Uri.parse(def.liveUrl!),
-              headers: const {
-                'User-Agent': 'mate-mvp/1.0 (hackathon public notice reader)',
-                'Accept': 'text/html',
-              },
-            )
-            .timeout(const Duration(seconds: 8))
-            .then((r) {
-          if (r.statusCode != 200) throw Exception('status ${r.statusCode}');
-          return utf8.decode(r.bodyBytes);
-        });
-        final notices = SkkuBoardParser.parse(html, baseUrl: def.liveUrl!.split('?').first);
+        final chunks = await Future.wait(def.boards.map((b) async {
+          try {
+            final html = await _getHtml(b.url);
+            return SkkuBoardParser.parse(html, baseUrl: b.baseUrl);
+          } catch (_) {
+            return <RawNotice>[];
+          }
+        }));
+        final notices = selectUndergradNotices(chunks.expand((e) => e));
         if (notices.isNotEmpty) {
           return FeedBundle(
             sourceId: def.id,

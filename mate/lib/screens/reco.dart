@@ -6,10 +6,10 @@ import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
-/// 추천 탭: 관심사에 맞는 소식을 모아 보여주고, 누르면 달력에 마감일이 들어가요.
-/// 학교·학과 공지는 공개 홈페이지에서 가져오고, 제목을 누르면 원문이 열려요.
+/// 추천 탭: 학부생에게 필요한 소식을 모아 보여주고, 누르면 달력에 마감일이 들어가요.
+/// 소프트 학부 공지·취업·학부연구생·공모전과 학교 장학/비교과를 가져와요.
 
-const Map<String, String> _catStyle = {'schol': 'job', 'lab': 'class', 'vol': 'meet', 'club': 'dept'};
+const Map<String, String> _catStyle = {'acad': 'dept', 'schol': 'job', 'lab': 'class', 'vol': 'meet', 'club': 'dept'};
 
 class RecoScreen extends LiveView {
   const RecoScreen({super.key});
