@@ -94,7 +94,7 @@ class AppState extends ChangeNotifier {
   // 함께 신청
   String shareOpp = 'o1';
   late Map<int, bool> shareTo;
-  String reqWho = 'senior';
+  late Map<int, bool> reqTo; // 밥약 신청 받을 친구 (kFriends 번호)
   bool reqAnon = true;
 
   // 일정 추가
@@ -146,7 +146,7 @@ class AppState extends ChangeNotifier {
     play = PlayState();
     mealReqState.clear();
     meetApplied.clear();
-    reqWho = 'senior';
+    reqTo = {0: true, 1: false, 2: false};
     reqAnon = true;
     shareOpp = 'o1';
     shareTo = {0: true, 1: true, 2: false};
@@ -899,17 +899,33 @@ class AppState extends ChangeNotifier {
     showToast('같이 먹기를 신청했어요. 수락되면 배너로 알려드려요');
   }
 
-  void reqSetWho(String v) {
-    reqWho = v;
+  void openReq() {
+    reqTo = {for (var i = 0; i < kFriends.length; i++) i: i == 0};
     _n();
   }
+
+  void toggleReqTo(int i) {
+    reqTo[i] = !(reqTo[i] ?? false);
+    _n();
+  }
+
+  int reqCount() => reqTo.values.where((v) => v).length;
+
+  List<String> reqNames() => [for (var i = 0; i < kFriends.length; i++) if (reqTo[i] == true) kFriends[i].n];
 
   void reqToggleAnon() {
     reqAnon = !reqAnon;
     _n();
   }
 
-  void reqSend() => showToast('밥약 신청을 보냈어요. 답장이 오면 배너로 알려드려요');
+  void reqSend() {
+    final names = reqNames();
+    if (names.isEmpty) {
+      showToast('밥약을 보낼 친구를 골라주세요');
+      return;
+    }
+    showToast('${names.join(', ')}에게 밥약 신청을 보냈어요. 답장이 오면 배너로 알려드려요');
+  }
 
   // ------------------------------------------------------------ 과팅
 

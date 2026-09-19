@@ -5,7 +5,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// 아래에서 올라오는 창(시트)들이 모여 있어요: 일정 추가, 함께 신청, 밥약 신청, 알림, 밥약 상세, 과팅 신청, 친구 추가, 시간 선택.
+/// 아래에서 올라오는 창(시트)들이 모여 있어요: 일정 추가, 함께 신청, 밥약 신청, 밥약 상세, 과팅 신청, 친구 추가, 시간 선택.
 
 Future<T?> _openSheet<T>(BuildContext context, Widget Function(BuildContext) builder) {
   return showModalBottomSheet<T>(
@@ -163,21 +163,36 @@ Future<void> showShareSheet(BuildContext context, String oppId) {
 // ------------------------------------------------------------------ 밥약 신청하기
 
 Future<void> showReqSheet(BuildContext context) {
+  app.openReq();
   return _openSheet<void>(context, (ctx) {
-    const who = [('senior', '학과 선배'), ('club', '동아리 선배'), ('peer', '동기')];
+    final n = app.reqCount();
     return SheetFrame(title: '밥약 신청하기', children: [
       const Txt('만나서 말하기 어려울 때, 먼저 정중하게 신청해 보세요.', size: 13, muted: true),
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Lbl('누구에게 신청할까요?'),
+        const Lbl('누구에게 신청할까요?', small: '친구 중에서 여러 명 고를 수 있어요'),
         const SizedBox(height: 8),
-        ChipGrid(cols: 3, children: [for (final w in who) PillChip(w.$2, expand: true, on: app.reqWho == w.$1, onTap: () => app.reqSetWho(w.$1))]),
+        AppCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Column(children: [
+            for (var i = 0; i < kFriends.length; i++)
+              PersonRow(
+                first: i == 0,
+                avatar: Avatar(kFriends[i].n[0], style: pal(ctx).types[kFriends[i].t]),
+                name: kFriends[i].n,
+                sub: kFriends[i].d,
+                trailing: AppSwitch(on: app.reqTo[i] ?? false, label: '${kFriends[i].n}에게 신청하기', onTap: () => app.toggleReqTo(i)),
+              ),
+          ]),
+        ),
       ]),
       Field('보낼 메시지', child: AppInput(controller: app.reqMsgC, maxLines: 4)),
       SwitchCard(title: '익명으로 신청하기', sub: '수락하면 이름이 공개돼요', on: app.reqAnon, onTap: app.reqToggleAnon),
-      Btn('신청 보내기', onTap: () {
-        Navigator.of(ctx).pop();
-        app.reqSend();
-      }),
+      Btn(n == 0 ? '신청할 친구를 골라주세요' : '$n명에게 신청 보내기', onTap: n == 0
+          ? null
+          : () {
+              Navigator.of(ctx).pop();
+              app.reqSend();
+            }),
     ]);
   });
 }

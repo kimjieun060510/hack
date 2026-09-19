@@ -61,4 +61,36 @@ void main() {
     expect(find.text('데모 둘러보기'), findsNothing);
     expect(find.text('처음 상태로 되돌리기'), findsNothing);
   });
+
+  testWidgets('밥약 신청하기에서 친구를 골라 보낼 수 있어요', (tester) async {
+    await pumpApp(tester);
+    await login(tester);
+
+    await tester.tap(find.text('밥약').first);
+    await tester.pump();
+    await tester.tap(find.text('밥약 보내기').first);
+    await tester.pump();
+
+    final openReq = find.text('밥약 신청하기');
+    await tester.ensureVisible(openReq);
+    await tester.tap(openReq);
+    await tester.pumpAndSettle();
+
+    expect(find.text('누구에게 신청할까요?'), findsOneWidget);
+    expect(find.text('김민준'), findsWidgets);
+    expect(find.text('이서연'), findsWidgets);
+    expect(find.text('박지훈'), findsWidgets);
+    expect(find.text('학과 선배'), findsNothing);
+    expect(find.text('동아리 선배'), findsNothing);
+    expect(find.text('동기'), findsNothing);
+    expect(find.text('1명에게 신청 보내기'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('이서연에게 신청하기'));
+    await tester.pump();
+    expect(find.text('2명에게 신청 보내기'), findsOneWidget);
+
+    await tester.tap(find.text('2명에게 신청 보내기'));
+    await tester.pump();
+    expect(find.text('김민준, 이서연에게 밥약 신청을 보냈어요. 답장이 오면 배너로 알려드려요'), findsOneWidget);
+  });
 }
