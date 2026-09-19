@@ -115,10 +115,11 @@ class AppState extends ChangeNotifier {
   final Set<int> following = {}; // 내가 팔로우한 사람 (kFriends 번호)
   final followSearchC = TextEditingController(); // 이름 · 학번 검색
 
-  // 일정 추가
+  // 일정 추가 · 수정
   String addType = 'job';
   bool addNewOpen = false;
   String addStart = '18:00', addEnd = '22:00';
+  String? editingId; // 고치고 있는 일정. 없으면 새로 추가.
 
   // 글자 입력칸
   final idC = TextEditingController();
@@ -188,6 +189,7 @@ class AppState extends ChangeNotifier {
     addNewOpen = false;
     addStart = '18:00';
     addEnd = '22:00';
+    editingId = null;
     idC.clear();
     pwC.clear();
     signNameC.clear();
@@ -878,9 +880,26 @@ class AppState extends ChangeNotifier {
 
   void shareSend() => showToast('${shareCount()}명에게 “같이 신청하자”를 보냈어요');
 
-  // 일정 추가 창
+  // 일정 추가 · 수정 창
+  bool get isEditing => editingId != null;
+
   void prepareAdd() {
+    editingId = null;
+    addTitleC.clear();
     addDateC.text = shortDate(sel).split(' ')[0];
+    addType = 'job';
+    addStart = '18:00';
+    addEnd = '22:00';
+    addNewOpen = false;
+  }
+
+  void prepareEdit(Ev e) {
+    editingId = e.id;
+    addTitleC.text = e.title;
+    addDateC.text = '${monthOf(e.key)}/${dayOf(e.key)}';
+    addType = e.type;
+    addStart = e.t.isEmpty ? '18:00' : e.t;
+    addEnd = e.end;
     addNewOpen = false;
   }
 
@@ -919,27 +938,52 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  /// 일정 추가. 문제가 있으면 안내 문구를, 성공하면 null 을 돌려줘요.
+  /// 일정 추가 또는 수정. 문제가 있으면 안내 문구를, 성공하면 null 을 돌려줘요.
   String? submitAdd() {
-    final key = parseSeptDate(addDateC.text);
-    if (key == null) return '9월 안의 날짜를 입력해주세요 (예: 9/28)';
+    final key = parseDate(addDateC.text);
+    if (key == null) return '날짜를 입력해주세요 (예: 9/28, 10/1)';
     final job = addType == 'job';
     final h = job ? hoursBetween(addStart, addEnd) : 0.0;
+    final hours = job ? (h == 0 ? 2 : h) : null;
     final title = addTitleC.text.trim();
+    final name = title.isEmpty ? typeName(addType) : title;
+    final t = addStart.isEmpty ? '18:00' : addStart;
+    final prevSel = sel;
+    if (editingId != null) {
+      final i = events.indexWhere((e) => e.id == editingId);
+      if (i < 0) return '일정을 찾지 못했어요';
+      final old = events[i];
+      events[i] = old.copyWith(
+        key: key,
+        t: t,
+        end: addEnd,
+        type: addType,
+        title: name,
+        sub: job ? '${fmtH(hours ?? 2)}시간 · 직접 입력' : (old.mine ? '직접 입력' : (old.type == addType ? old.sub : '직접 수정')),
+        hours: hours,
+        clearHours: !job,
+      );
+      editingId = null;
+      addTitleC.clear();
+      sel = key;
+      if (calView == 'week' && !weekKeys(prevSel).contains(key)) calView = 'month';
+      showToast('일정을 고쳤어요');
+      return null;
+    }
     events.add(Ev(
       id: 'e${_uid++}',
       key: key,
-      t: addStart.isEmpty ? '18:00' : addStart,
+      t: t,
       end: addEnd,
       type: addType,
-      title: title.isEmpty ? typeName(addType) : title,
-      sub: job ? '${fmtH(h)}시간 · 직접 입력' : '직접 입력',
+      title: name,
+      sub: job ? '${fmtH(hours ?? 2)}시간 · 직접 입력' : '직접 입력',
       mine: true,
-      hours: job ? (h == 0 ? 2 : h) : null,
+      hours: hours,
     ));
     sel = key;
     addTitleC.clear();
-    if (calView == 'week' && !kWeek.map((d) => '9-$d').contains(key)) calView = 'month';
+    if (calView == 'week' && !weekKeys(prevSel).contains(key)) calView = 'month';
     showToast('달력에 추가했어요');
     return null;
   }

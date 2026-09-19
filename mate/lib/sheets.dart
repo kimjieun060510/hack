@@ -52,10 +52,15 @@ class SheetFrame extends StatelessWidget {
   }
 }
 
-// ------------------------------------------------------------------ 일정 추가
+// ------------------------------------------------------------------ 일정 추가 · 수정
 
 Future<void> showAddSheet(BuildContext context) {
   app.prepareAdd();
+  return _openSheet<void>(context, (_) => const _AddSheet());
+}
+
+Future<void> showEditSheet(BuildContext context, Ev e) {
+  app.prepareEdit(e);
   return _openSheet<void>(context, (_) => const _AddSheet());
 }
 
@@ -93,7 +98,8 @@ class _AddSheetState extends State<_AddSheet> {
   }
 
   Widget _content(BuildContext context, Pal p, List<(String, String)> types) {
-    return SheetFrame(title: '일정 추가', children: [
+    final edit = app.isEditing;
+    return SheetFrame(title: edit ? '일정 수정' : '일정 추가', children: [
       Field('무엇을 하나요?', child: AppInput(controller: app.addTitleC, hint: '예: 카페 알바, 과외, 친구 약속')),
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Lbl('종류'),
@@ -111,14 +117,14 @@ class _AddSheetState extends State<_AddSheet> {
           ]),
         ],
       ]),
-      Field('날짜 (직접 입력)', child: AppInput(controller: app.addDateC, hint: '예: 9/28', maxLength: 10, keyboardType: TextInputType.datetime)),
+      Field('날짜 (직접 입력)', child: AppInput(controller: app.addDateC, hint: '예: 9/28, 10/1', maxLength: 10, keyboardType: TextInputType.datetime)),
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(child: TimeField(label: '시작', value: app.addStart, options: timeOpts('00:00', '23:30'), onPicked: (v) => app.setAddTime(true, v))),
         const SizedBox(width: 12),
-        Expanded(child: TimeField(label: '끝', value: app.addEnd, options: timeOpts('00:30', '24:00'), onPicked: (v) => app.setAddTime(false, v))),
+        Expanded(child: TimeField(label: '끝', value: app.addEnd.isEmpty ? '없음' : app.addEnd, options: timeOpts('00:30', '24:00'), onPicked: (v) => app.setAddTime(false, v))),
       ]),
       if (_err != null) Text(_err!, style: TextStyle(color: p.danger, fontSize: 13, fontWeight: FontWeight.w700)),
-      Btn('달력에 추가', onTap: _submit),
+      Btn(edit ? '저장' : '달력에 추가', onTap: _submit),
     ]);
   }
 }

@@ -184,6 +184,34 @@ class Ev {
     this.g,
     this.oppId,
   });
+
+  Ev copyWith({
+    String? key,
+    String? t,
+    String? end,
+    String? type,
+    String? title,
+    String? sub,
+    bool? mine,
+    double? hours,
+    bool clearHours = false,
+  }) {
+    return Ev(
+      id: id,
+      key: key ?? this.key,
+      t: t ?? this.t,
+      end: end ?? this.end,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      sub: sub ?? this.sub,
+      mine: mine ?? this.mine,
+      hours: clearHours ? null : (hours ?? this.hours),
+      src: src,
+      cat: cat,
+      g: g,
+      oppId: oppId,
+    );
+  }
 }
 
 /// 직접 만든 일정 종류
@@ -279,8 +307,9 @@ String fmtH(double h) {
   return r == r.roundToDouble() ? r.round().toString() : r.toString();
 }
 
-/// "9/28", "9-28", "28", "0928", "9월 28일" 처럼 친 글자를 'M-D' 로 바꿔요. 9월이 아니면 null.
-String? parseSeptDate(String raw) {
+/// "9/28", "9-28", "28", "0928", "9월 28일", "10/1" 처럼 친 글자를 'M-D' 로 바꿔요.
+/// 숫자만 있으면 9월로 봐요. 없는 날짜면 null.
+String? parseDate(String raw) {
   final s = raw.trim();
   if (s.isEmpty) return null;
   final nums = RegExp(r'\d+').allMatches(s).map((m) => m.group(0)!).toList();
@@ -301,9 +330,13 @@ String? parseSeptDate(String raw) {
       day = int.tryParse(d.substring(2));
     }
   }
-  if (month != 9 || day == null || day < 1 || day > 30) return null;
-  return '9-$day';
+  if (month == null || day == null || month < 1 || month > 12) return null;
+  if (day < 1 || day > daysInMonth(month)) return null;
+  return '$month-$day';
 }
+
+/// 예전 이름. 이제는 9월 밖 날짜도 받아요.
+String? parseSeptDate(String raw) => parseDate(raw);
 
 /// 스크롤 칸에 쓰는 날짜 글자. 예) "오늘 9/21 (월)", "9/22 (화)"
 String wheelDate(String key) {
