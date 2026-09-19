@@ -29,6 +29,12 @@
 		<string>https</string>
 		<string>http</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>채널톡에서 사진을 보내려면 카메라가 필요해요</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>채널톡에서 음성을 보내려면 마이크가 필요해요</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>채널톡에서 사진을 보내려면 앨범이 필요해요</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

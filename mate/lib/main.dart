@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'data.dart';
+import 'screens/channel.dart';
 import 'shell.dart';
 import 'theme.dart';
 
@@ -18,6 +19,7 @@ class MateApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: mateNav,
       title: kAppName,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(Pal.light, Brightness.light),
