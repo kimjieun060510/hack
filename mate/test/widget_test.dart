@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -13,10 +14,16 @@ void main() {
     FeedClient.allowNetwork = false;
   });
 
-  testWidgets('앱이 열리고 첫 화면(로그인)이 보여요', (tester) async {
+  testWidgets('로그인 칸에 학번·비밀번호를 칠 수 있어요', (tester) async {
     await tester.pumpWidget(const MateApp());
-    expect(find.text('로그인'), findsWidgets);
-    expect(find.text('회원가입 / 인증'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, '2026123456');
+    await tester.enterText(find.byType(TextField).at(1), 'demo');
+    expect(app.idC.text, '2026123456');
+    expect(app.pwC.text, 'demo');
+    await tester.tap(find.text('로그인').last);
+    await tester.pump();
+    expect(find.text('밥약'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
   });
 
   testWidgets('로그인 뒤 내 정보에서 가져올 곳이 보여요', (tester) async {
