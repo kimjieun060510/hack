@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'data.dart';
 import 'screens/calendar.dart';
+import 'screens/login.dart';
 import 'screens/onboarding.dart';
 import 'screens/reco.dart';
 import 'screens/social.dart';
@@ -22,7 +23,9 @@ class Shell extends LiveView {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     Widget page;
-    if (app.onboard == 0) {
+    if (!app.loggedIn) {
+      page = const LoginScreen();
+    } else if (app.onboard == 0) {
       page = const VerifyScreen();
     } else if (app.onboard == 1) {
       page = const InterestScreen();
@@ -34,7 +37,7 @@ class Shell extends LiveView {
       page = const CalendarScreen();
     }
 
-    final showTabs = !onboarding && !keyboard;
+    final showTabs = app.loggedIn && !onboarding && !keyboard;
 
     return PopScope(
       canPop: false,

@@ -63,10 +63,18 @@ class AppState extends ChangeNotifier {
   }
 
   int _uid = 100;
-  Timer? _toastT, _bannerT, _searchT;
+  Timer? _toastT, _bannerT, _searchT, _loginT;
+
+  // ---- 로그인 (채널톡 연동 전 · 된 척만)
+  bool loggedIn = false;
+  bool autoLogin = false;
+  bool loginObscure = true;
+  bool loginBusy = false;
+  final studentIdC = TextEditingController();
+  final passwordC = TextEditingController();
 
   // ---- 화면 상태
-  int? onboard = 0; // 0 인증, 1 관심사, null 이면 메인 화면
+  int? onboard; // 0 인증, 1 관심사, null 이면 메인 화면. 로그인이 먼저라 시작은 null.
   String verify = 'idle'; // idle | scanning | done
   String tab = 'cal'; // reco | cal | social
   String calView = 'week';
@@ -107,7 +115,13 @@ class AppState extends ChangeNotifier {
   final playTitleC = TextEditingController();
 
   void _init() {
-    onboard = 0;
+    loggedIn = false;
+    autoLogin = false;
+    loginObscure = true;
+    loginBusy = false;
+    studentIdC.clear();
+    passwordC.clear();
+    onboard = null;
     verify = 'idle';
     tab = 'cal';
     calView = 'week';
@@ -391,6 +405,7 @@ class AppState extends ChangeNotifier {
 
   /// 안드로이드 뒤로가기. 처리했으면 true, 앱을 나가도 되면 false.
   bool back() {
+    if (!loggedIn) return false;
     if (push) {
       push = false;
       _n();
@@ -425,7 +440,9 @@ class AppState extends ChangeNotifier {
     banner = null;
     resetFlows();
     if (i == 0) {
-      onboard = 0;
+      loggedIn = false;
+      loginBusy = false;
+      onboard = null;
       verify = 'idle';
       _n();
       return;
@@ -449,8 +466,48 @@ class AppState extends ChangeNotifier {
     _searchT?.cancel();
     _toastT?.cancel();
     _bannerT?.cancel();
+    _loginT?.cancel();
     _init();
-    onboard = null;
+    _n();
+  }
+
+  // ------------------------------------------------------------ 로그인 (가짜 · 채널톡 연동 예정)
+
+  void toggleAutoLogin() {
+    autoLogin = !autoLogin;
+    _n();
+  }
+
+  void toggleLoginObscure() {
+    loginObscure = !loginObscure;
+    _n();
+  }
+
+  /// 학번/비번을 검사하지 않고, 잠시 기다렸다가 메인으로 들어가요.
+  void fakeLogin() {
+    if (loginBusy) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    loginBusy = true;
+    _n();
+    _loginT?.cancel();
+    _loginT = Timer(const Duration(milliseconds: 550), () {
+      loginBusy = false;
+      loggedIn = true;
+      onboard = null;
+      go('cal');
+      _n();
+    });
+  }
+
+  /// 회원가입 시안이 오면 이 자리에 화면을 붙입니다.
+  void goSignup() {
+    showToast('회원가입 / 인증 화면은 다음 시안에서 이어서 만들게요');
+  }
+
+  void logout() {
+    _loginT?.cancel();
+    loggedIn = false;
+    loginBusy = false;
     _n();
   }
 
@@ -915,6 +972,9 @@ class AppState extends ChangeNotifier {
     _toastT?.cancel();
     _bannerT?.cancel();
     _searchT?.cancel();
+    _loginT?.cancel();
+    studentIdC.dispose();
+    passwordC.dispose();
     mealMsgC.dispose();
     addTitleC.dispose();
     addDateC.dispose();
