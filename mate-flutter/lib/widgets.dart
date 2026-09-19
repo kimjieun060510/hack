@@ -10,7 +10,9 @@ import 'theme.dart';
 Pal pal(BuildContext c) => Pal.of(c);
 
 Future<void> openUrl(String url) async {
-  await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  final uri = Uri.parse(url);
+  if (!await canLaunchUrl(uri)) return;
+  await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
 /// 위젯 사이에 같은 간격을 넣어줘요.

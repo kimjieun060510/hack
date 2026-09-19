@@ -18,10 +18,10 @@ flutter pub get
 ```bash
 # 아이폰 시뮬레이터 (맥)
 open -a Simulator
-flutter run
+flutter run -d ios
 
 # 안드로이드 에뮬레이터 (에뮬레이터를 먼저 켠 뒤)
-flutter run
+flutter run -d android
 
 # 시뮬레이터가 없으면 크롬에서 보기
 flutter run -d chrome

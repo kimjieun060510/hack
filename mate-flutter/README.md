@@ -21,17 +21,17 @@ flutter pub get
 
 ```bash
 open -a Simulator
-flutter run
+flutter run -d ios
 ```
 
-시뮬레이터가 이미 켜져 있으면 `flutter run` 만 해도 돼요.
+시뮬레이터가 이미 켜져 있으면 `flutter run -d ios` 만 해도 돼요.
 
 ### 안드로이드 에뮬레이터
 
 Android Studio에서 에뮬레이터를 켠 다음:
 
 ```bash
-flutter run
+flutter run -d android
 ```
 
 에뮬레이터 목록을 보고 직접 켜려면:

@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "mate (Android)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "mate-flutter",
+      "program": "lib/main.dart",
+      "deviceId": "android"
+    },
+    {
+      "name": "mate (iOS)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "mate-flutter",
+      "program": "lib/main.dart",
+      "deviceId": "ios"
+    },
+    {
+      "name": "mate (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "mate-flutter",
+      "program": "lib/main.dart",
+      "deviceId": "chrome"
+    }
+  ]
+}
