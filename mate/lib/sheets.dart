@@ -5,7 +5,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// 아래에서 올라오는 창(시트)들이 모여 있어요: 일정 추가, 함께 신청, 밥약 신청, 알림, 밥약 상세, 과팅 신청, 친구 추가, 시간 선택.
+/// 아래에서 올라오는 창(시트)들이 모여 있어요: 일정 추가, 함께 신청, 밥약 신청, 밥약 상세, 과팅 신청, 친구 추가, 시간 선택.
 
 Future<T?> _openSheet<T>(BuildContext context, Widget Function(BuildContext) builder) {
   return showModalBottomSheet<T>(
@@ -184,39 +184,11 @@ Future<void> showReqSheet(BuildContext context) {
       ),
       Field('보낼 메시지', child: AppInput(controller: app.reqMsgC, maxLines: 4)),
       SwitchCard(title: '익명으로 신청하기', sub: '수락하면 이름이 공개돼요', on: app.reqAnon, onTap: app.reqToggleAnon),
-      Btn('신청 보내기', onTap: () {
-        if (app.reqSend()) Navigator.of(ctx).pop();
-      }),
-    ]);
-  });
-}
-
-// ------------------------------------------------------------------ 알림
-
-Future<void> showNotifSheet(BuildContext context) {
-  app.readNotifs();
-  return _openSheet<void>(context, (ctx) {
-    final p = pal(ctx);
-    return SheetFrame(title: '알림', children: [
-      AppCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(children: [
-          for (var i = 0; i < app.notifs.length; i++)
-            InkWell(
-              onTap: () {
-                Navigator.of(ctx).pop();
-                app.notifGo(app.notifs[i].go);
-              },
-              child: PersonRow(
-                first: i == 0,
-                avatar: IconDisc(app.notifs[i].ic, bg: p.priSoft, fg: p.pri),
-                name: app.notifs[i].t,
-                sub: app.notifs[i].s,
-                trailing: Icon(icon('chev'), color: p.mut),
-              ),
-            ),
-        ]),
-      ),
+      Btn(mutual.isEmpty || app.reqPicked.isEmpty ? '신청할 친구를 골라주세요' : '${app.reqPicked.length}명에게 신청 보내기', onTap: mutual.isEmpty || app.reqPicked.isEmpty
+          ? null
+          : () {
+              if (app.reqSend()) Navigator.of(ctx).pop();
+            }),
     ]);
   });
 }
@@ -261,6 +233,7 @@ Future<void> showMealDetailSheet(BuildContext context, RandMeal q) {
 Future<void> showMeetApplySheet(BuildContext context, MeetPost post) {
   return _openSheet<void>(context, (ctx) {
     final p = pal(ctx);
+    final full = app.meetSideFull(post);
     return SheetFrame(title: '과팅 신청', children: [
       AppCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -275,11 +248,17 @@ Future<void> showMeetApplySheet(BuildContext context, MeetPost post) {
           ]),
         ]),
       ),
+      if (full)
+        Txt('이 과팅은 ${app.meetSideName()} 인원이 다 찼어요. 다른 팀을 찾아 보세요.', size: 13, muted: true)
+      else
+        Txt('신청하면 ${app.meetSideName()} 팀에 들어가요.', size: 13, muted: true),
       const SafeCard(title: '매너 지킴이', body: '만난 뒤에 불편했다면 익명으로 경고를 보낼 수 있어요. 경고가 3번 쌓이면 과팅이 몇 주간 정지돼요.'),
-      Btn('우리 팀으로 신청하기', ic: 'heart', onTap: () {
-        Navigator.of(ctx).pop();
-        app.meetApply(post.id);
-      }),
+      Btn(full ? '신청불가' : '우리 팀으로 신청하기', ic: full ? null : 'heart', onTap: full
+          ? null
+          : () {
+              Navigator.of(ctx).pop();
+              app.meetApply(post.id);
+            }),
     ]);
   });
 }

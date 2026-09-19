@@ -11,16 +11,15 @@ import '../widgets.dart';
 /// 서브 화면 공통 틀: 머리글 + 본문 + (아래 버튼 줄)
 class _SubPage extends StatelessWidget {
   final String title;
-  final String? pill;
   final List<Widget> children;
   final ActionBar? bar;
-  const _SubPage({required this.title, this.pill, required this.children, this.bar});
+  const _SubPage({required this.title, required this.children, this.bar});
 
   @override
   Widget build(BuildContext context) {
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Column(children: [
-      SafeArea(bottom: false, child: BackHeader(title, pill: pill)),
+      SafeArea(bottom: false, child: BackHeader(title)),
       Expanded(child: Body(children: children)),
       if (bar != null && !keyboard) bar!,
     ]);
@@ -378,12 +377,11 @@ class MeetScreen extends LiveView {
   Widget body(BuildContext context) {
     final m = app.meet;
     if (m.step == 'matched') {
-      return _SubPage(title: '과팅 매칭', pill: '과팅 / 놀기', bar: _socialBar('find'), children: const [_MeetMatched()]);
+      return _SubPage(title: '과팅 매칭', bar: _socialBar('find'), children: const [_MeetMatched()]);
     }
     if (app.meetView == 'make') {
       return _SubPage(
         title: '과팅 만들기',
-        pill: '과팅 / 놀기',
         bar: _socialBar('make', submit: () {
           final e = app.meetCreate();
           if (e != null) app.showToast(e);
@@ -391,7 +389,7 @@ class MeetScreen extends LiveView {
         children: const [_MeetMake()],
       );
     }
-    return _SubPage(title: '과팅 찾기', pill: '과팅 / 놀기', bar: _socialBar('find'), children: const [_MeetFind()]);
+    return _SubPage(title: '과팅 찾기', bar: _socialBar('find'), children: const [_MeetFind()]);
   }
 }
 
@@ -417,6 +415,8 @@ class _PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = pal(context);
+    final applied = app.meetApplied.contains(post.id);
+    final full = !post.mine && !applied && app.meetSideFull(post);
     return Container(
       decoration: BoxDecoration(
         color: p.surface,
@@ -429,7 +429,7 @@ class _PostCard extends StatelessWidget {
           color: p.tint,
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
           child: InkWell(
-            onTap: post.mine || app.meetApplied.contains(post.id) ? null : () => showMeetApplySheet(context, post),
+            onTap: post.mine || applied || full ? null : () => showMeetApplySheet(context, post),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
@@ -451,7 +451,7 @@ class _PostCard extends StatelessWidget {
                     ]),
                   ),
                 ),
-                if (!post.mine && !app.meetApplied.contains(post.id)) Icon(icon('chev'), size: 22, color: p.ink),
+                if (!post.mine && !applied && !full) Icon(icon('chev'), size: 22, color: p.ink),
               ]),
             ),
           ),
@@ -475,10 +475,12 @@ class _PostCard extends StatelessWidget {
             const Spacer(),
             if (post.mine)
               OkBadge('내 ${post.size.replaceAll(':', ' : ')} · 대기 중')
-            else if (app.meetApplied.contains(post.id))
+            else if (applied)
               const OkBadge('신청했어요')
+            else if (full)
+              Btn('신청불가', kind: 'line', small: true, expand: false, onTap: () => app.showToast('이 과팅은 ${app.meetSideName()} 인원이 다 찼어요'))
             else
-              Btn('신청 가능', kind: 'soft', small: true, expand: false, onTap: () => showMeetApplySheet(context, post)),
+              Btn('신청하기', kind: 'soft', small: true, expand: false, onTap: () => showMeetApplySheet(context, post)),
           ]),
         ),
       ]),
@@ -654,12 +656,12 @@ class PlayScreen extends LiveView {
     final pl = app.play;
     final bar = _socialBar('play');
     if (pl.view == 'done') {
-      return _SubPage(title: '놀기', pill: '과팅 / 놀기', bar: bar, children: [
+      return _SubPage(title: '놀기', bar: bar, children: [
         const BigMessage(lead: BigIcon('check'), title: '놀기 모임을 올렸어요!', body: '같은 시간에 비어 있는 새내기에게\n배너 알림으로 알려드릴게요.'),
         Btn('놀기 화면으로', onTap: app.playBackToList),
       ]);
     }
-    return _SubPage(title: '놀기', pill: '과팅 / 놀기', bar: bar, children: const [_PlayForm()]);
+    return _SubPage(title: '놀기', bar: bar, children: const [_PlayForm()]);
   }
 }
 

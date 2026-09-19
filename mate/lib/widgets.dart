@@ -467,22 +467,6 @@ class AvatarStack extends StatelessWidget {
   }
 }
 
-class Meter extends StatelessWidget {
-  final int n, on;
-  const Meter({super.key, this.n = 3, this.on = 0});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = pal(context);
-    return Row(children: [
-      for (var i = 0; i < n; i++) ...[
-        if (i > 0) const SizedBox(width: 6),
-        Expanded(child: Container(height: 8, decoration: BoxDecoration(color: i < on ? p.pri : p.line, borderRadius: BorderRadius.circular(4)))),
-      ],
-    ]);
-  }
-}
-
 class AppSwitch extends StatelessWidget {
   final bool on;
   final VoidCallback onTap;
@@ -769,9 +753,8 @@ class TimeField extends StatelessWidget {
 class RoundIconBtn extends StatelessWidget {
   final String ic;
   final VoidCallback onTap;
-  final bool dot;
   final String label;
-  const RoundIconBtn({super.key, required this.ic, required this.onTap, required this.label, this.dot = false});
+  const RoundIconBtn({super.key, required this.ic, required this.onTap, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -788,76 +771,43 @@ class RoundIconBtn extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             customBorder: const CircleBorder(),
-            child: Stack(alignment: Alignment.center, children: [
-              Icon(icon(ic), size: 22, color: p.ink),
-              if (dot)
-                Positioned(
-                  top: 10,
-                  right: 11,
-                  child: Container(width: 9, height: 9, decoration: BoxDecoration(color: p.types['assign']!.c, shape: BoxShape.circle, border: Border.all(color: p.surface, width: 2))),
-                ),
-            ]),
+            child: Icon(icon(ic), size: 22, color: p.ink),
           ),
         ),
       ),
     );
   }
-}
-
-class BellBtn extends StatelessWidget {
-  const BellBtn({super.key});
-
-  @override
-  Widget build(BuildContext context) => ListenableBuilder(
-        listenable: app,
-        builder: (c, _) => RoundIconBtn(ic: 'bell', label: app.unread > 0 ? '알림 ${app.unread}개' : '알림', dot: app.unread > 0, onTap: () => showNotifSheet(context)),
-      );
 }
 
 class MeBtn extends StatelessWidget {
   const MeBtn({super.key});
 
   @override
-  Widget build(BuildContext context) => RoundIconBtn(ic: 'user', label: '내 정보', onTap: () => app.open('me'));
-}
-
-/// 오른쪽 위 초록 알약 (시안의 "과팅 / 놀기", "달력"). 누르면 메인화면으로 가요.
-class ModePill extends StatelessWidget {
-  final String label;
-  const ModePill(this.label, {super.key});
-
-  @override
   Widget build(BuildContext context) {
     final p = pal(context);
     return Semantics(
       button: true,
-      label: '$label, 메인화면으로',
-      child: Material(
-        color: p.pri,
-        shape: const StadiumBorder(),
-        child: InkWell(
-          onTap: app.goHome,
-          customBorder: const StadiumBorder(),
-          child: Container(
-            height: 44,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            alignment: Alignment.center,
-            child: Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: p.priInk)),
-          ),
+      label: '내 정보',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => app.open('me'),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 10, 4, 10),
+          child: Text('내 정보', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: p.priText)),
         ),
       ),
     );
   }
 }
 
-/// 화면 위쪽 머리글: 뒤로가기 + 제목 + (오른쪽 알약 · 버튼들)
+/// 화면 위쪽 머리글: 뒤로가기 + 제목 + (오른쪽 버튼들)
 class BackHeader extends StatelessWidget {
   final String title;
   final Widget? titleWidget;
-  final String? pill;
   final List<Widget> actions;
   final VoidCallback? onBack;
-  const BackHeader(this.title, {super.key, this.titleWidget, this.pill, this.actions = const [], this.onBack});
+  const BackHeader(this.title, {super.key, this.titleWidget, this.actions = const [], this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -876,7 +826,6 @@ class BackHeader extends StatelessWidget {
         ),
         const SizedBox(width: 2),
         Expanded(child: titleWidget ?? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: disp(26, p.ink, height: 1.2))),
-        if (pill != null) ModePill(pill!),
         for (final a in actions) ...[const SizedBox(width: 8), a],
       ]),
     );

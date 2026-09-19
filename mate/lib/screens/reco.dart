@@ -17,15 +17,8 @@ class RecoScreen extends LiveView {
   @override
   Widget body(BuildContext context) {
     final list = app.recoList();
-    Opp? feat;
-    for (final o in list) {
-      if (!app.isAdded(o.id)) {
-        feat = o;
-        break;
-      }
-    }
-    final rest = list.where((o) => o != feat).toList();
     final srcs = app.feedLine();
+    final allAdded = list.isNotEmpty && list.every((o) => app.isAdded(o.id));
 
     return Column(children: [
       SafeArea(
@@ -68,88 +61,17 @@ class RecoScreen extends LiveView {
               ]),
             ),
           ]),
-          if (feat != null)
-            _FeatCard(o: feat)
-          else if (list.isNotEmpty)
-            const AiCard(ic: 'check', center: true, child: Txt('지금 나온 소식은 모두 달력에 추가했어요.')),
+          if (allAdded) const AiCard(ic: 'check', center: true, child: Txt('지금 나온 소식은 모두 달력에 추가했어요.')),
           Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            SectionHead(feat != null ? '이런 것도 있어요' : '추가한 소식', trailing: '+ 누르면 마감일·행사 당일이 달력에 들어가요'),
+            const SectionHead('둘러보세요', trailing: '+ 누르면 마감일·행사 당일이 달력에 들어가요'),
             const SizedBox(height: 10),
-            ...gapped([for (final o in rest) _OppRow(o: o)], 10),
+            ...gapped([for (final o in list) _OppRow(o: o)], 10),
             if (list.isEmpty)
               AppCard(child: Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Txt('켜둔 분야가 없어요. 위에서 하나 이상 켜주세요.', muted: true, align: TextAlign.center))),
           ]),
         ]),
       ),
     ]);
-  }
-}
-
-class _FeatCard extends StatelessWidget {
-  final Opp o;
-  const _FeatCard({required this.o});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = pal(context);
-    final f = app.fieldMatch(o);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: p.featBg, borderRadius: BorderRadius.circular(24)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(children: [
-          Expanded(child: Text('이거 관심 있으세요?', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: p.featMut))),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
-            decoration: BoxDecoration(color: const Color(0x29FFFFFF), borderRadius: BorderRadius.circular(99)),
-            child: Text(ddayText(o.key), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: p.featInk)),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        InkWell(
-          onTap: () => openUrl(articleUrl(o)),
-          borderRadius: BorderRadius.circular(10),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text.rich(TextSpan(children: [
-              TextSpan(text: o.title),
-              const TextSpan(text: '  '),
-              WidgetSpan(alignment: PlaceholderAlignment.middle, child: Icon(icon('ext'), size: 18, color: p.featMut)),
-            ]), style: disp(22, p.featInk, height: 1.3)),
-            const SizedBox(height: 10),
-            Text('${o.src} · ${kCats[o.cat]} · ${whenPhrase(o)}${f != null ? ' · $f 관심사와 일치' : ''}', style: TextStyle(fontSize: 13, height: 1.5, color: p.featMut)),
-          ]),
-        ),
-        const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: Material(
-              color: p.featBtn,
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                onTap: () => app.toggleOpp(o.id),
-                borderRadius: BorderRadius.circular(14),
-                child: Container(height: 44, alignment: Alignment.center, child: Text('좋아, 달력에 추가', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: p.featBtnInk))),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          InkWell(
-            onTap: () => openUrl(articleUrl(o)),
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0x73FFFFFF))),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(icon('share'), size: 18, color: p.featInk),
-                const SizedBox(width: 6),
-                Text('이 공지', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: p.featInk)),
-              ]),
-            ),
-          ),
-        ]),
-      ]),
-    );
   }
 }
 

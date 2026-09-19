@@ -8,11 +8,6 @@ import 'feeds.dart';
 /// 앱의 모든 상태와 "버튼을 눌렀을 때 일어나는 일"이 들어 있는 파일이에요.
 /// 화면(screens/*.dart)은 여기 있는 app 을 읽고, 버튼에서 app.○○() 를 불러요.
 
-class Notif {
-  final String id, ic, t, s, go;
-  Notif(this.id, this.ic, this.t, this.s, this.go);
-}
-
 class BannerData {
   final String t, ic, k, title, body, cta, go;
   const BannerData({required this.t, required this.ic, required this.k, required this.title, required this.body, this.cta = '', this.go = ''});
@@ -82,7 +77,6 @@ class AppState extends ChangeNotifier {
   bool push = false;
   BannerData? banner;
   String toastMsg = '';
-  int unread = 2;
 
   // 내 정보
   String userName = '혜인';
@@ -97,7 +91,6 @@ class AppState extends ChangeNotifier {
   final Map<String, String> feedStatus = {};
   bool syncing = false;
   late List<CustomType> customTypes;
-  late List<Notif> notifs;
   late List<MeetPost> meetPosts;
   late MealState meal;
   late MeetState meet;
@@ -150,7 +143,6 @@ class AppState extends ChangeNotifier {
     push = false;
     banner = null;
     toastMsg = '';
-    unread = 2;
     gender = 'male';
     autoLogin = false;
     showPw = false;
@@ -166,11 +158,7 @@ class AppState extends ChangeNotifier {
     _syncedOnce = false;
     _syncGen++;
     customTypes = [];
-    notifs = [
-      Notif('n1', 'sparkle', '새 기회 2개가 도착했어요', '관심 분야에 맞는 공고예요', 'reco'),
-      Notif('n2', 'utensils', '익명의 맞팔 친구가 밥약을 보냈어요', '12:30 같이 밥 먹을래요?', 'push'),
-    ];
-    meetPosts = List.of(kMeetSeed);
+    meetPosts = [for (final p in kMeetSeed) MeetPost(p.id, p.key, p.time, p.place, p.size, List.of(p.m), List.of(p.f), mine: p.mine, note: p.note)];
     meal = MealState();
     meet = MeetState();
     play = PlayState();
@@ -461,7 +449,8 @@ class AppState extends ChangeNotifier {
     return l;
   }
 
-  int confirmedMeetCount() => myPlans().where((e) => !e.title.startsWith('밥약')).length;
+  /// 이번 주(월~일)에 올라온 과팅 팀 수
+  int weekMeetTeamCount() => meetPosts.where((p) => kWeek.contains(dayOf(p.key))).length;
 
   String formatStudentNo() {
     final n = studentNo.replaceAll(RegExp(r'\s'), '');
@@ -470,6 +459,27 @@ class AppState extends ChangeNotifier {
 
   // 과팅 도우미
   int meetCap(String size) => int.tryParse(size.split(':').first) ?? 2;
+
+  int meetMaleCap(String size) => int.tryParse(size.split(':').first) ?? 2;
+
+  int meetFemaleCap(String size) {
+    final parts = size.split(':');
+    return int.tryParse(parts.length > 1 ? parts.last : parts.first) ?? 2;
+  }
+
+  int meetSideCap(MeetPost post) => gender == 'male' ? meetMaleCap(post.size) : meetFemaleCap(post.size);
+
+  int meetSideCount(MeetPost post) => gender == 'male' ? post.m.length : post.f.length;
+
+  bool meetSideFull(MeetPost post) => meetSideCount(post) >= meetSideCap(post);
+
+  String meetSideName() => gender == 'male' ? '남자' : '여자';
+
+  (String, int) meTag() {
+    final n = studentNo.replaceAll(RegExp(r'\s'), '');
+    final y = n.length >= 4 ? (int.tryParse(n.substring(2, 4)) ?? 26) : 26;
+    return ('소프트', y);
+  }
 
   // ------------------------------------------------------------ 알림 · 토스트 · 배너
 
@@ -491,11 +501,6 @@ class AppState extends ChangeNotifier {
       _n();
     });
     _n();
-  }
-
-  void _notify(String ic, String t, String s, String go) {
-    notifs.insert(0, Notif('n${_uid++}', ic, t, s, go));
-    unread++;
   }
 
   void addEvent(Ev e) => events.add(e);
@@ -558,13 +563,6 @@ class AppState extends ChangeNotifier {
     resetFlows();
     screen = 'home';
     _n();
-  }
-
-  void _root(String s) {
-    _hist.clear();
-    if (s != 'home') _hist.add('home');
-    screen = s;
-    if (s == 'reco' || s == 'me' || s == 'cal') _kickSync();
   }
 
   void resetFlows() {
@@ -637,41 +635,6 @@ class AppState extends ChangeNotifier {
     banner = null;
     _n();
     return true;
-  }
-
-  void jump(int i) {
-    _clearOverlays();
-    resetFlows();
-    _pending = null;
-    if (i == 0) {
-      _hist
-        ..clear()
-        ..add('login');
-      screen = 'verify';
-      _resetSignup();
-      interestDone = false;
-      _n();
-      return;
-    }
-    interestDone = true;
-    if (i == 1) {
-      calView = 'week';
-      sel = kToday;
-      filter = 'all';
-      _root('cal');
-    }
-    if (i == 2) _root('reco');
-    if (i == 3) {
-      mealView = 'find';
-      _root('meal');
-    }
-    if (i == 4) {
-      meetView = 'find';
-      _root('meet');
-    }
-    if (i == 5) _root('play');
-    if (i == 6) push = true;
-    _n();
   }
 
   void resetAll() {
@@ -803,12 +766,6 @@ class AppState extends ChangeNotifier {
     screen = to;
     _kickSync();
     _n();
-  }
-
-  /// 내 정보에서 관심사 다시 고르기
-  void redoInterest() {
-    _pending = screen == 'me' ? 'reco' : screen;
-    open('interest');
   }
 
   void toggleCat(String k) {
@@ -1081,7 +1038,6 @@ class AppState extends ChangeNotifier {
         cta: '약속 확인',
         go: 'plans',
       ));
-      _notify('utensils', '밥약 매칭이 성사됐어요', '${meal.mates.length}명이 같이 먹기로 했어요', 'plans');
       _n();
     });
     _n();
@@ -1146,9 +1102,9 @@ class AppState extends ChangeNotifier {
       showToast(mutuals().isEmpty ? '맞팔한 친구가 아직 없어요. 내 정보에서 팔로우해 보세요' : '신청을 보낼 맞팔 친구를 골라주세요');
       return false;
     }
-    final names = to.length == 1 ? kFriends[to.first].n : '${kFriends[to.first].n} 외 ${to.length - 1}명';
+    final names = to.map((i) => kFriends[i].n).join(', ');
     reqPicked.clear();
-    showToast('$names 님에게 밥약 신청을 보냈어요. 답장이 오면 배너로 알려드려요');
+    showToast('$names에게 밥약 신청을 보냈어요. 답장이 오면 배너로 알려드려요');
     return true;
   }
 
@@ -1200,14 +1156,23 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  /// 올라온 과팅에 신청 → 바로 매칭 (데모)
+  /// 올라온 과팅에 신청. 내 성별 쪽에 자리가 있으면 그 그룹에 들어가요.
   void meetApply(String id) {
-    if (!meetApplied.add(id)) return;
+    if (meetApplied.contains(id)) return;
     final post = meetPosts.firstWhere((x) => x.id == id);
+    if (post.mine) return;
+    if (meetSideFull(post)) {
+      showToast('이 과팅은 ${meetSideName()} 인원이 다 찼어요');
+      return;
+    }
+    meetApplied.add(id);
+    final tag = meTag();
+    if (gender == 'male') {
+      post.m.add(tag);
+    } else {
+      post.f.add(tag);
+    }
     final end = fromMin(toMin(post.time) + 120);
-    final when = '${shortDate(post.key)} ${post.time}';
-    meet.step = 'matched';
-    meet.postId = id;
     events.add(Ev(
       id: 'e${_uid++}',
       key: post.key,
@@ -1215,11 +1180,10 @@ class AppState extends ChangeNotifier {
       end: end,
       type: 'meet',
       title: '과팅 ${post.size.replaceAll(':', ' : ')}',
-      sub: '${post.place} · 우리 팀과 함께',
+      sub: '${post.place} · ${meetSideName()} 팀 · 나',
       mine: true,
     ));
-    showBanner(BannerData(t: 'meet', ic: 'heart', k: '과팅 매칭', title: '상대 팀과 이어졌어요', body: '$when · ${post.place} · ${post.size.replaceAll(':', ' : ')}', cta: '내 약속 보기', go: 'plans'));
-    _notify('heart', '과팅 매칭이 성사됐어요', '$when · ${post.place}', 'plans');
+    showToast('${meetSideName()} 팀에 들어갔어요. 달력에 넣어뒀어요');
     _n();
   }
 
@@ -1341,20 +1305,6 @@ class AppState extends ChangeNotifier {
   void bannerGo(String g) {
     banner = null;
     open(g);
-  }
-
-  void notifGo(String g) {
-    if (g == 'push') {
-      push = true;
-      _n();
-    } else {
-      open(g);
-    }
-  }
-
-  void readNotifs() {
-    unread = 0;
-    _n();
   }
 
   /// 화면 뒤에서 바뀐 값을 화면에 알려줘요 (시트 안에서 쓰는 도우미)

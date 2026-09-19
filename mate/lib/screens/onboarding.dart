@@ -239,7 +239,7 @@ class InterestScreen extends LiveView {
             child: Body(padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), children: [
               Text('관심사', style: TextStyle(color: p.pri, fontWeight: FontWeight.w700, fontSize: 13)),
               Heading('딱 한 번만 골라요\n나머지는 앱이 해요', size: 30, color: p.ink),
-              const Txt('고른 분야의 새 소식이 올라오면 “이거 관심 있으세요?” 하고 알려줄게요.', muted: true, height: 1.6),
+              const Txt('고른 분야의 새 소식이 추천 탭에 모여요.', muted: true, height: 1.6),
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 const Lbl('어떤 소식이 궁금해요?', small: '추천 탭에서 언제든 바꿀 수 있어요'),
                 const SizedBox(height: 8),

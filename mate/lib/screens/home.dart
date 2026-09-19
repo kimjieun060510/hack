@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../data.dart';
-import '../feeds.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -22,23 +21,17 @@ class HomeScreen extends LiveView {
       child: SafeArea(
         bottom: false,
         child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 10, 16, 4),
-            child: Row(children: [
-              const MateLogo(size: 34),
-              const Spacer(),
-              const BellBtn(),
-              const SizedBox(width: 8),
-              const MeBtn(),
-            ]),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(22, 10, 16, 4),
+            child: Align(alignment: Alignment.centerLeft, child: MateLogo(size: 34)),
           ),
           Expanded(
             child: Body(padding: EdgeInsets.fromLTRB(16, 6, 16, 24 + MediaQuery.paddingOf(context).bottom), children: [
               Padding(
                 padding: const EdgeInsets.only(left: 6),
                 child: Text.rich(TextSpan(children: [
-                  TextSpan(text: '${app.userName}님, ', style: TextStyle(fontWeight: FontWeight.w800, color: p.ink)),
-                  TextSpan(text: '오늘도 혼자가 아니에요.', style: TextStyle(color: p.mut)),
+                  TextSpan(text: '${app.userName}님 ', style: TextStyle(fontWeight: FontWeight.w800, color: p.ink)),
+                  TextSpan(text: '메이트 찾으시나요?', style: TextStyle(color: p.mut)),
                 ]), style: const TextStyle(fontSize: 16, height: 1.4)),
               ),
               _HomeCard(
@@ -52,7 +45,7 @@ class HomeScreen extends LiveView {
                 ic: 'heart',
                 title: '과팅 / 놀기',
                 sub: '함께할 친구를 찾아보세요.\n학교에서, 카페에서, 어디서든 좋아요!',
-                chip: '이벤트 확정됨 ${app.confirmedMeetCount()}개',
+                chip: '이번주 과팅 팀 ${app.weekMeetTeamCount()}개',
                 onTap: () => app.openMeet(),
               ),
               _HomeCard(
@@ -222,7 +215,6 @@ class MeScreen extends LiveView {
   @override
   Widget body(BuildContext context) {
     final p = pal(context);
-    const src = kFeedSources;
     return Backdrop(
       child: SafeArea(
         bottom: false,
@@ -259,31 +251,6 @@ class MeScreen extends LiveView {
                   Center(child: Btn('로그아웃', ic: 'logout', kind: 'line', small: true, expand: false, onTap: app.logout)),
                 ]),
               ),
-              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                const Lbl('정보를 가져올 곳'),
-                const SizedBox(height: 8),
-                ...gapped([for (final s in src) SourceCard(s: s)], 8),
-                const SizedBox(height: 8),
-                Btn('지금 가져오기', ic: 'refresh', kind: 'line', small: true, onTap: () => app.syncFeeds()),
-                const SizedBox(height: 8),
-                Btn('관심사 다시 고르기', ic: 'sparkle', kind: 'line', small: true, onTap: app.redoInterest),
-              ]),
-              AppCard(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  const SectionHead('매너 경고', trailing: '3번 쌓이면 과팅 정지'),
-                  const SizedBox(height: 10),
-                  const Meter(),
-                ]),
-              ),
-              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                const Lbl('데모 둘러보기'),
-                const SizedBox(height: 8),
-                ...gapped([
-                  for (var i = 0; i < kJumps.length; i++)
-                    _JumpRow(label: '${i + 1}. ${kJumps[i].$1}', sub: kJumps[i].$2, onTap: () => app.jump(i)),
-                ], 8),
-              ]),
-              LinkBtn('처음 상태로 되돌리기', onTap: app.resetAll),
             ]),
           ),
         ]),
@@ -311,37 +278,6 @@ class _InfoRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(child: valueWidget ?? Text(value ?? '', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: p.ink))),
       ]),
-    );
-  }
-}
-
-class _JumpRow extends StatelessWidget {
-  final String label, sub;
-  final VoidCallback onTap;
-  const _JumpRow({required this.label, required this.sub, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = pal(context);
-    return Material(
-      color: p.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: p.line)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: p.ink)),
-                Text(sub, style: TextStyle(fontSize: 12, height: 1.4, color: p.mut)),
-              ]),
-            ),
-            Icon(icon('chev'), color: p.mut),
-          ]),
-        ),
-      ),
     );
   }
 }
