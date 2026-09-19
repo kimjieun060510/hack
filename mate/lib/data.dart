@@ -50,20 +50,67 @@ const List<Opp> kOpps = [
   Opp('o1', 'https://cse.skku.edu/cse/notice.do', 'edu', 'dept', '학과 홈페이지', '신입생 진로탐색 특강', '9-25', '18:00', '선착순 40명', ['취업·진로']),
   Opp('o2', 'https://www.skku.edu/skku/campus/skk_comm/notice06.do', 'schol', 'dept', '학과 홈페이지', '교내 장학금 신청 안내', '9-25', '17:00', '성적·소득 기준 확인', []),
   Opp('o3', 'https://ranbiz.skku.edu/?p=21', 'lab', 'dept', '산학협력단', '산학협력 프로젝트 모집', '9-25', '23:59', '팀 또는 개인 지원', ['개발·IT', '연구·실험']),
-  Opp('o4', 'https://cse.skku.edu/cse/notice.do', 'edu', 'dept', '소프트웨어학과', 'AI 아이디어톤 참가팀 모집', '9-27', '23:59', '3~4인 팀', ['개발·IT']),
-  Opp('o5', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'vol', 'dept', '학생지원팀', '겨울 해외봉사단 모집', '10-1', '17:00', '서류 심사 후 면접', []),
+  Opp('o4', 'https://cse.skku.edu/cse/notice.do', 'edu', 'dept', '소프트웨어학과', 'AI 아이디어톤 참가팀 모집', '9-27', '23:59', '팀 구성 필수', ['개발·IT']),
+  Opp('o5', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'vol', 'dept', '학생지원팀', '지역 아동센터 교육 봉사자 모집', '9-28', '17:00', '주 1회 · 교육 멘토링', []),
+  Opp('o7', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'edu', 'dept', '교양대학', '인문학 특강 시리즈', '10-1', '23:59', '전 학년 · 오프라인 특강', []),
   Opp('o6', 'https://everytime.kr', 'club', 'etta', '에타', '해커톤 팀원 모집', '9-22', '23:59', '디자이너·기획자 환영', ['개발·IT', '디자인']),
 ];
 
 class Friend {
   final String n, d, t; // 이름, 학과·학번, 색 종류
-  const Friend(this.n, this.d, this.t);
+  final String s; // 짧은 학과 이름 (과팅 카드용)
+  final int y; // 학번 두 자리
+  const Friend(this.n, this.d, this.t, this.s, this.y);
 }
 
 const List<Friend> kFriends = [
-  Friend('김민준', '컴퓨터공학 26', 'class'),
-  Friend('이서연', '경영학 26', 'meet'),
-  Friend('박지훈', '전자전기공학 26', 'job'),
+  Friend('김민준', '컴퓨터공학 26', 'class', '컴공', 26),
+  Friend('이서연', '경영학 26', 'meet', '경영', 26),
+  Friend('박지훈', '전자전기공학 26', 'job', '전전', 26),
+];
+
+/// 밥약 찾기 · 내 친구가 보낸 밥약
+class MealReq {
+  final String id, time, title, place, msg;
+  const MealReq(this.id, this.time, this.title, this.place, this.msg);
+}
+
+const List<MealReq> kMealReqs = [
+  MealReq('r1', '12:00', '학식', '공학관', '한식 먹으러'),
+  MealReq('r2', '12:30', '돈까스', '인문관', '밥먹을 사람'),
+];
+
+/// 밥약 찾기 · 랜덤 매칭
+class RandMeal {
+  final String id, time, name, dept, msg;
+  const RandMeal(this.id, this.time, this.name, this.dept, this.msg);
+}
+
+const List<RandMeal> kRandMeals = [
+  RandMeal('q1', '12:30', '낙빈', '스포츠과학과 24학번', '돈까스 좋아해요'),
+];
+
+/// 과팅 찾기 · 올라온 과팅 (m: 남자 팀원, f: 여자 팀원 — (짧은 학과, 학번))
+class MeetPost {
+  final String id, key, time, place, size, note;
+  final List<(String, int)> m, f;
+  final bool mine;
+  const MeetPost(this.id, this.key, this.time, this.place, this.size, this.m, this.f, {this.mine = false, this.note = ''});
+}
+
+const List<MeetPost> kMeetSeed = [
+  MeetPost('m1', '9-21', '18:00', '학생회관', '3:3', [('스과', 24), ('스과', 24), ('스과', 25)], [('생명', 25)]),
+  MeetPost('m2', '9-22', '19:00', '실내체육관', '3:3', [('소프트', 26), ('소프트', 26), ('소프트', 26)], []),
+];
+
+/// 놀기 · 어떤 걸 할까요? (id, 이름, 아이콘)
+const List<(String, String, String)> kActs = [
+  ('cafe', '카페', 'cafe'),
+  ('movie', '영화', 'film'),
+  ('gym', '운동', 'gym'),
+  ('pc', 'PC방', 'pc'),
+  ('beer', '술', 'beer'),
+  ('etc', '기타', 'more'),
 ];
 
 class PlayPost {
@@ -80,12 +127,12 @@ const List<PlayPost> kPlays = [
 
 /// 내 정보 화면의 "데모 둘러보기" 목록
 const List<(String, String)> kJumps = [
-  ('처음 시작', '학생증 인증 · 관심사 한 번만 고르기'),
+  ('처음 시작', '회원가입 · 메인화면 · 관심사 한 번만 고르기'),
   ('일정 한눈에', '주간 플래너 · AI 건강 챙기기 · 일정 추가'),
   ('기회 받기', '“이거 관심 있으세요?” → 달력에 추가'),
-  ('밥약', '지금 밥 먹을 사람? · 익명 · 한마디'),
-  ('과팅', '팀 만들기 · 시간대 매칭 · 매너 경고'),
-  ('놀기', '같이 놀 사람 모으기 · 모임 만들기'),
+  ('밥약', '친구가 보낸 밥약 · 밥약 보내기'),
+  ('과팅', '과팅 찾기 · 과팅 만들기'),
+  ('놀기', '받은 놀기 신청 · 놀 친구 구하기'),
   ('받는 사람 화면', '푸시 알림 · 배너 알림'),
 ];
 
@@ -198,4 +245,21 @@ String? parseSeptDate(String raw) {
   }
   if (month != 9 || day == null || day < 1 || day > 30) return null;
   return '9-$day';
+}
+
+/// 스크롤 칸에 쓰는 날짜 글자. 예) "오늘 9/21 (월)", "9/22 (화)"
+String wheelDate(String key) {
+  final p = key.split('-');
+  return '${key == kToday ? '오늘 ' : ''}${p[0]}/${p[1]} (${kDayN[dowOf(key)]})';
+}
+
+/// 오늘부터 n일치 날짜 키 (9월 30일까지)
+List<String> nextDays(int n) {
+  final out = <String>[];
+  for (var i = 0; i < n; i++) {
+    final d = 21 + i;
+    if (d > 30) break;
+    out.add('9-$d');
+  }
+  return out;
 }

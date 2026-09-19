@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'data.dart';
-import 'screens/calendar.dart';
 import 'screens/onboarding.dart';
+import 'screens/calendar.dart';
+import 'screens/home.dart';
 import 'screens/reco.dart';
 import 'screens/social.dart';
 import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// 앱의 큰 틀: 현재 화면 + 아래 탭 + 위에 뜨는 것들(배너 · 안내 문구 · 받는 사람 화면)
+/// 앱의 큰 틀: 현재 화면 + (달력·추천일 때) 아래 탭 + 위에 뜨는 것들(배너 · 안내 문구 · 받는 사람 화면)
 /// 안드로이드 뒤로가기 버튼은 app.back() 이 처리해요 (state.dart).
 
 class Shell extends LiveView {
@@ -18,23 +19,46 @@ class Shell extends LiveView {
 
   @override
   Widget body(BuildContext context) {
-    final onboarding = app.onboard != null;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     Widget page;
-    if (app.onboard == 0) {
-      page = const VerifyScreen();
-    } else if (app.onboard == 1) {
-      page = const InterestScreen();
-    } else if (app.tab == 'reco') {
-      page = const RecoScreen();
-    } else if (app.tab == 'social') {
-      page = const SocialScreen();
-    } else {
-      page = const CalendarScreen();
+    switch (app.screen) {
+      case 'login':
+        page = const LoginScreen();
+        break;
+      case 'verify':
+        page = const VerifyScreen();
+        break;
+      case 'interest':
+        page = const InterestScreen();
+        break;
+      case 'cal':
+        page = const CalendarScreen();
+        break;
+      case 'reco':
+        page = const RecoScreen();
+        break;
+      case 'meal':
+        page = const MealScreen();
+        break;
+      case 'meet':
+        page = const MeetScreen();
+        break;
+      case 'play':
+        page = const PlayScreen();
+        break;
+      case 'plans':
+        page = const PlansScreen();
+        break;
+      case 'me':
+        page = const MeScreen();
+        break;
+      default:
+        page = const HomeScreen();
     }
 
-    final showTabs = !onboarding && !keyboard;
+    // 아래 탭(달력 · 추천)은 이 두 화면에서만 보여요
+    final showTabs = (app.screen == 'cal' || app.screen == 'reco') && !keyboard;
 
     return PopScope(
       canPop: false,

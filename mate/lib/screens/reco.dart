@@ -28,16 +28,22 @@ class RecoScreen extends LiveView {
     final srcs = ['아이캠퍼스', if (app.conn['dept'] == true) '학과 홈페이지', if (app.conn['etta'] == true) '에타'].join(' · ');
 
     return Column(children: [
-      SafeArea(bottom: false, child: TitleHeader('추천')),
+      SafeArea(bottom: false, child: BackHeader('', titleWidget: Text('추천', style: disp(32, pal(context).ink, height: 1.2)))),
       Expanded(
         child: Body(children: [
           Txt('$srcs에서 내 관심사에 맞는 소식만 모았어요.', size: 13, muted: true),
           Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const SectionHead('달력에 띄울 분야', trailing: '눌러서 켜고 끄기'),
             const SizedBox(height: 10),
-            ChipWrap(children: [
-              for (final e in kCats.entries) PillChip(e.value, on: app.cats[e.key] ?? false, leading: (app.cats[e.key] ?? false) ? 'check' : null, onTap: () => app.toggleCat(e.key)),
-            ]),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                for (final e in kCats.entries) ...[
+                  _CatChip(label: e.value, on: app.cats[e.key] ?? false, onTap: () => app.toggleCat(e.key)),
+                  const SizedBox(width: 8),
+                ],
+              ]),
+            ),
           ]),
           if (feat != null)
             _FeatCard(o: feat)
@@ -130,7 +136,8 @@ class _RoundBtn extends StatelessWidget {
   final String ic, kind; // kind: line | pri | on
   final String label;
   final VoidCallback onTap;
-  const _RoundBtn({required this.ic, required this.kind, required this.label, required this.onTap});
+  final double size;
+  const _RoundBtn({required this.ic, required this.kind, required this.label, required this.onTap, this.size = 44});
 
   @override
   Widget build(BuildContext context) {
@@ -142,12 +149,12 @@ class _RoundBtn extends StatelessWidget {
       button: true,
       label: label,
       child: Container(
-        width: 44,
-        height: 44,
+        width: size,
+        height: size,
         decoration: BoxDecoration(color: bg, shape: BoxShape.circle, border: Border.all(color: bd)),
         child: Material(
           type: MaterialType.transparency,
-          child: InkWell(onTap: onTap, customBorder: const CircleBorder(), child: Icon(icon(ic), size: 22, color: fg)),
+          child: InkWell(onTap: onTap, customBorder: const CircleBorder(), child: Icon(icon(ic), size: size * 0.5, color: fg)),
         ),
       ),
     );
@@ -193,11 +200,44 @@ class _OppRow extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Column(mainAxisSize: MainAxisSize.min, children: [
-          _RoundBtn(ic: 'share', kind: 'line', label: '${o.title} 친구와 함께 신청', onTap: () => showShareSheet(context, o.id)),
-          const SizedBox(height: 4),
-          _RoundBtn(ic: on ? 'check' : 'plus', kind: on ? 'on' : 'pri', label: '${on ? '달력에서 빼기' : '달력에 추가'}: ${o.title}', onTap: () => app.toggleOpp(o.id)),
+          _RoundBtn(size: 48, ic: 'share', kind: 'line', label: '${o.title} 친구와 함께 신청', onTap: () => showShareSheet(context, o.id)),
+          const SizedBox(height: 6),
+          _RoundBtn(size: 60, ic: on ? 'check' : 'plus', kind: on ? 'on' : 'pri', label: '${on ? '달력에서 빼기' : '달력에 추가'}: ${o.title}', onTap: () => app.toggleOpp(o.id)),
         ]),
       ]),
+    );
+  }
+}
+
+/// "달력에 띄울 분야" 알약 칩 (시안: 체크 표시 + 연한 초록)
+class _CatChip extends StatelessWidget {
+  final String label;
+  final bool on;
+  final VoidCallback onTap;
+  const _CatChip({required this.label, required this.on, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    return Semantics(
+      button: true,
+      selected: on,
+      child: Material(
+        color: on ? p.priSoft : p.surface,
+        shape: StadiumBorder(side: BorderSide(color: on ? p.priSoft : p.line)),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const StadiumBorder(),
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              if (on) ...[Icon(icon('check'), size: 22, color: p.priText), const SizedBox(width: 8)],
+              Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: on ? p.priText : p.mut)),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }

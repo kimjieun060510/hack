@@ -112,10 +112,11 @@ class Btn extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
   final String? ic;
-  final String kind; // pri | soft | line | hero
+  final String kind; // pri | soft | line | mint
   final bool small;
   final bool expand;
-  const Btn(this.label, {super.key, this.onTap, this.ic, this.kind = 'pri', this.small = false, this.expand = true});
+  final double? radius; // 기본은 알약 모양. 시안처럼 각진 둥근 사각형이 필요하면 값을 줘요.
+  const Btn(this.label, {super.key, this.onTap, this.ic, this.kind = 'pri', this.small = false, this.expand = true, this.radius});
 
   @override
   Widget build(BuildContext context) {
@@ -127,20 +128,22 @@ class Btn extends StatelessWidget {
         bg = p.priSoft;
         fg = p.priText;
         break;
+      case 'mint': // 시안의 연한 초록 + 초록 테두리 버튼
+        bg = p.priSoft;
+        fg = p.priText;
+        border = p.pri;
+        break;
       case 'line':
         bg = p.surface;
         fg = p.ink;
         border = p.line;
-        break;
-      case 'hero':
-        bg = p.heroInk;
-        fg = p.heroBg;
         break;
       default:
         bg = p.pri;
         fg = p.priInk;
     }
     final enabled = onTap != null;
+    final r = radius ?? (small ? 22.0 : 26.0);
     final child = Row(
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -153,11 +156,11 @@ class Btn extends StatelessWidget {
       opacity: enabled ? 1 : 0.45,
       child: Material(
         color: bg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(small ? 14 : 16), side: border == null ? BorderSide.none : BorderSide(color: border)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(r), side: border == null ? BorderSide.none : BorderSide(color: border, width: 1.5)),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(small ? 14 : 16),
-          child: Container(height: small ? 44 : 52, padding: EdgeInsets.symmetric(horizontal: small ? 14 : 18), alignment: Alignment.center, child: child),
+          borderRadius: BorderRadius.circular(r),
+          child: Container(height: small ? 44 : 52, padding: EdgeInsets.symmetric(horizontal: small ? 16 : 20), child: child),
         ),
       ),
     );
@@ -223,7 +226,12 @@ class PillChip extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(14),
-            child: Container(constraints: const BoxConstraints(minHeight: 42), padding: const EdgeInsets.symmetric(horizontal: 14), alignment: Alignment.center, child: row),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 42),
+              padding: EdgeInsets.symmetric(horizontal: expand ? 10 : 14, vertical: 11),
+              alignment: expand ? Alignment.center : null,
+              child: row,
+            ),
           ),
         ),
       ),
@@ -259,15 +267,47 @@ class AppCard extends StatelessWidget {
   final Color? color;
   final Color? borderColor;
   final double radius;
-  const AppCard({super.key, required this.child, this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 14), this.color, this.borderColor, this.radius = 20});
+  const AppCard({super.key, required this.child, this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 14), this.color, this.borderColor, this.radius = 22});
 
   @override
   Widget build(BuildContext context) {
     final p = pal(context);
     return Container(
       padding: padding,
-      decoration: BoxDecoration(color: color ?? p.surface, borderRadius: BorderRadius.circular(radius), border: Border.all(color: borderColor ?? p.line)),
+      decoration: BoxDecoration(
+        color: color ?? p.surface,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: borderColor ?? p.line),
+        boxShadow: const [BoxShadow(color: Color(0x0D1E3A2A), blurRadius: 18, offset: Offset(0, 6))],
+      ),
       child: child,
+    );
+  }
+}
+
+/// 시안의 연한 초록 칸: 아이콘 + 제목 + 안쪽 내용 (과팅 만들기, 놀기 등)
+class SectionCard extends StatelessWidget {
+  final String ic, title;
+  final String? small;
+  final Widget child;
+  const SectionCard({super.key, required this.ic, required this.title, this.small, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(color: p.tint, borderRadius: BorderRadius.circular(22), border: Border.all(color: p.line)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Icon(icon(ic), size: 24, color: p.pri),
+          const SizedBox(width: 10),
+          Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: p.ink)),
+        ]),
+        if (small != null) Padding(padding: const EdgeInsets.only(top: 2, left: 34), child: Text(small!, style: TextStyle(fontSize: 12, color: p.mut))),
+        const SizedBox(height: 10),
+        child,
+      ]),
     );
   }
 }
@@ -350,7 +390,7 @@ class SectionHead extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = pal(context);
     return Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-      Txt(title, size: 16, bold: true),
+      Text(title, style: disp(19, p.ink, height: 1.3)),
       if (trailing != null) ...[
         const SizedBox(width: 10),
         Expanded(child: Text(trailing!, textAlign: TextAlign.right, style: TextStyle(fontSize: 12, color: trailingColor ?? p.mut, fontWeight: trailingColor == null ? FontWeight.w400 : FontWeight.w700))),
@@ -594,17 +634,39 @@ class AppInput extends StatelessWidget {
   final TextInputType? keyboardType;
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
-  const AppInput({super.key, required this.controller, this.hint = '', this.maxLength = 0, this.maxLines = 1, this.keyboardType, this.onSubmitted, this.onChanged});
+  final String? prefix; // 앞에 붙일 아이콘 이름
+  final Widget? suffix;
+  final bool obscure;
+  final bool pill; // 시안의 둥근 입력칸
+  final TextInputAction? action;
+  const AppInput({
+    super.key,
+    required this.controller,
+    this.hint = '',
+    this.maxLength = 0,
+    this.maxLines = 1,
+    this.keyboardType,
+    this.onSubmitted,
+    this.onChanged,
+    this.prefix,
+    this.suffix,
+    this.obscure = false,
+    this.pill = false,
+    this.action,
+  });
 
   @override
   Widget build(BuildContext context) {
     final p = pal(context);
-    OutlineInputBorder b(Color c, double w) => OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: c, width: w));
+    final r = pill ? 30.0 : 14.0;
+    OutlineInputBorder b(Color c, double w) => OutlineInputBorder(borderRadius: BorderRadius.circular(r), borderSide: BorderSide(color: c, width: w));
     return TextField(
       controller: controller,
-      maxLines: maxLines,
-      minLines: maxLines,
+      maxLines: obscure ? 1 : maxLines,
+      minLines: obscure ? 1 : maxLines,
+      obscureText: obscure,
       keyboardType: keyboardType,
+      textInputAction: action,
       maxLength: maxLength == 0 ? null : maxLength,
       buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
       onSubmitted: onSubmitted,
@@ -617,7 +679,9 @@ class AppInput extends StatelessWidget {
         filled: true,
         fillColor: p.surface,
         isDense: false,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        prefixIcon: prefix == null ? null : Icon(icon(prefix!), size: 22, color: p.mut),
+        suffixIcon: suffix,
+        contentPadding: EdgeInsets.symmetric(horizontal: pill ? 20 : 14, vertical: pill ? 16 : 14),
         enabledBorder: b(p.line, 1),
         focusedBorder: b(p.pri, 2),
         border: b(p.line, 1),
@@ -713,67 +777,165 @@ class MeBtn extends StatelessWidget {
   const MeBtn({super.key});
 
   @override
-  Widget build(BuildContext context) => RoundIconBtn(ic: 'user', label: '내 정보와 설정', onTap: () => showProfileSheet(context));
+  Widget build(BuildContext context) => RoundIconBtn(ic: 'user', label: '내 정보', onTap: () => app.open('me'));
 }
 
-/// 화면 위쪽 머리글: 왼쪽(제목) + 오른쪽 버튼들
-class AppHeader extends StatelessWidget {
-  final Widget left;
-  final List<Widget> actions;
-  const AppHeader({super.key, required this.left, this.actions = const []});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-      child: Row(children: [
-        Expanded(child: left),
-        for (var i = 0; i < actions.length; i++) ...[if (i > 0) const SizedBox(width: 8), actions[i]],
-      ]),
-    );
-  }
-}
-
-/// 큰 제목만 있는 머리글 (추천, 사회생활)
-class TitleHeader extends StatelessWidget {
-  final String title;
-  final double size;
-  const TitleHeader(this.title, {super.key, this.size = 34});
-
-  @override
-  Widget build(BuildContext context) => AppHeader(left: Heading(title, size: size), actions: const [BellBtn(), MeBtn()]);
-}
-
-/// 뒤로가기 화살표 + 제목 (밥약, 과팅, 놀기)
-class SubHeader extends StatelessWidget {
-  final String title;
-  final VoidCallback? onBack;
-  const SubHeader(this.title, {super.key, this.onBack});
+/// 오른쪽 위 초록 알약 (시안의 "과팅 / 놀기", "달력"). 누르면 메인화면으로 가요.
+class ModePill extends StatelessWidget {
+  final String label;
+  const ModePill(this.label, {super.key});
 
   @override
   Widget build(BuildContext context) {
     final p = pal(context);
-    return AppHeader(
-      left: Row(children: [
-        InkWell(
-          onTap: onBack ?? () => app.back(),
-          customBorder: const CircleBorder(),
-          child: SizedBox(width: 44, height: 44, child: Icon(icon('back'), size: 30, color: p.ink)),
+    return Semantics(
+      button: true,
+      label: '$label, 메인화면으로',
+      child: Material(
+        color: p.pri,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          onTap: app.goHome,
+          customBorder: const StadiumBorder(),
+          child: Container(
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            alignment: Alignment.center,
+            child: Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: p.priInk)),
+          ),
         ),
-        Expanded(child: Heading(title, size: 26)),
-      ]),
-      actions: const [BellBtn()],
+      ),
     );
   }
 }
 
+/// 화면 위쪽 머리글: 뒤로가기 + 제목 + (오른쪽 알약 · 버튼들)
+class BackHeader extends StatelessWidget {
+  final String title;
+  final Widget? titleWidget;
+  final String? pill;
+  final List<Widget> actions;
+  final VoidCallback? onBack;
+  const BackHeader(this.title, {super.key, this.titleWidget, this.pill, this.actions = const [], this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 8, 16, 6),
+      child: Row(children: [
+        Semantics(
+          button: true,
+          label: '뒤로가기',
+          child: InkWell(
+            onTap: onBack ?? () => app.back(),
+            customBorder: const CircleBorder(),
+            child: SizedBox(width: 44, height: 44, child: Icon(icon('back'), size: 32, color: p.ink)),
+          ),
+        ),
+        const SizedBox(width: 2),
+        Expanded(child: titleWidget ?? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: disp(26, p.ink, height: 1.2))),
+        if (pill != null) ModePill(pill!),
+        for (final a in actions) ...[const SizedBox(width: 8), a],
+      ]),
+    );
+  }
+}
+
+/// 굵은 제목 + 밑에 연한 초록 줄 (시안의 "로그인", "내 정보", "과팅 찾기")
+class UnderTitle extends StatelessWidget {
+  final String text;
+  final double size;
+  const UnderTitle(this.text, {super.key, this.size = 32});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      Text(text, style: disp(size, p.ink, height: 1.2)),
+      const SizedBox(height: 4),
+      Container(width: 46, height: 5, decoration: BoxDecoration(color: p.priLine, borderRadius: BorderRadius.circular(3))),
+    ]);
+  }
+}
+
+class BarItem {
+  final String label;
+  final String? ic;
+  final bool active; // 지금 보고 있는 것
+  final bool solid; // 진한 초록으로 꽉 채운 버튼 (실제로 "보내기 · 만들기"를 하는 버튼)
+  final int flex;
+  final VoidCallback onTap;
+  const BarItem(this.label, {this.ic, this.active = false, this.solid = false, this.flex = 1, required this.onTap});
+}
+
+/// 화면 아래 알약 버튼 줄 (밥약 찾기 / 밥약 보내기, 과팅 찾기 / 과팅 만들기 / 놀기)
+class ActionBar extends StatelessWidget {
+  final List<BarItem> items;
+  const ActionBar({super.key, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      decoration: BoxDecoration(color: p.paper, border: Border(top: BorderSide(color: p.line))),
+      child: SafeArea(
+        top: false,
+        child: Row(children: [
+          for (var i = 0; i < items.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(flex: items[i].flex, child: _BarBtn(items[i], dense: items.length > 2)),
+          ],
+        ]),
+      ),
+    );
+  }
+}
+
+class _BarBtn extends StatelessWidget {
+  final BarItem it;
+  final bool dense; // 버튼이 3개 이상이면 조금 작게
+  const _BarBtn(this.it, {this.dense = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    final Color bg = it.solid ? p.pri : (it.active ? p.priSoft : p.surface);
+    final Color fg = it.solid ? p.priInk : (it.active ? p.priText : p.ink);
+    final Color bd = it.solid ? p.pri : (it.active ? p.pri : p.priLine.withAlpha(150));
+    return Semantics(
+      button: true,
+      selected: it.active || it.solid,
+      child: Material(
+        color: bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26), side: BorderSide(color: bd, width: it.active || it.solid ? 1.5 : 1)),
+        child: InkWell(
+          onTap: it.onTap,
+          borderRadius: BorderRadius.circular(26),
+          child: Container(
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            alignment: Alignment.center,
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              if (it.ic != null) ...[Icon(icon(it.ic!), size: dense ? 18 : 20, color: fg), SizedBox(width: dense ? 4 : 6)],
+              Flexible(child: Text(it.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: dense ? 14 : 15, fontWeight: FontWeight.w700, color: fg))),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 달력 · 추천 화면 아래 탭
 class BottomTabs extends StatelessWidget {
   const BottomTabs({super.key});
 
   @override
   Widget build(BuildContext context) {
     final p = pal(context);
-    const tabs = [('reco', '추천', 'sparkle'), ('cal', '달력', 'calendar'), ('social', '사회생활', 'users')];
+    const tabs = [('cal', '달력', 'calendar'), ('reco', '추천', 'sparkle')];
     return ListenableBuilder(listenable: app, builder: (c, _) => _tabs(c, p, tabs));
   }
 
@@ -783,22 +945,32 @@ class BottomTabs extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
           child: Row(children: [
             for (final t in tabs)
               Expanded(
-                child: InkWell(
-                  onTap: () => app.setTab(t.$1),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Container(
-                      width: 60,
-                      height: 32,
-                      decoration: BoxDecoration(color: app.tab == t.$1 ? p.priSoft : Colors.transparent, borderRadius: BorderRadius.circular(16)),
-                      child: Icon(icon(t.$3), size: 22, color: app.tab == t.$1 ? p.pri : p.mut),
+                child: Semantics(
+                  button: true,
+                  selected: app.screen == t.$1,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Material(
+                      color: app.screen == t.$1 ? p.priSoft : Colors.transparent,
+                      borderRadius: BorderRadius.circular(24),
+                      child: InkWell(
+                        onTap: () => app.switchTab(t.$1),
+                        borderRadius: BorderRadius.circular(24),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(icon(t.$3), size: 26, color: app.screen == t.$1 ? p.pri : p.mut),
+                            const SizedBox(height: 2),
+                            Text(t.$2, style: TextStyle(fontSize: 13, fontWeight: app.screen == t.$1 ? FontWeight.w800 : FontWeight.w500, color: app.screen == t.$1 ? p.pri : p.mut)),
+                          ]),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(t.$2, style: TextStyle(fontSize: 12, fontWeight: app.tab == t.$1 ? FontWeight.w700 : FontWeight.w500, color: app.tab == t.$1 ? p.pri : p.mut)),
-                  ]),
+                  ),
                 ),
               ),
           ]),
@@ -988,4 +1160,200 @@ abstract class LiveView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(listenable: app, builder: (c, _) => body(c));
+}
+
+// ------------------------------------------------------------------ 배경 · 로고
+
+/// 크림색 바탕 위에 연한 초록 물결과 나뭇잎을 깔아줘요 (로그인, 가입, 내 정보)
+class Backdrop extends StatelessWidget {
+  final Widget child;
+  final bool leaves;
+  const Backdrop({super.key, required this.child, this.leaves = true});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    return Stack(children: [
+      Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: _BlobPainter(p.blob, Color.lerp(p.blob, p.pri, 0.28)!, leaves)))),
+      Positioned.fill(child: child),
+    ]);
+  }
+}
+
+class _BlobPainter extends CustomPainter {
+  final Color blob, leaf;
+  final bool leaves;
+  const _BlobPainter(this.blob, this.leaf, this.leaves);
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    final paint = Paint()..color = blob;
+    final top = Path()
+      ..moveTo(-20, -20)
+      ..lineTo(s.width * 0.6, -20)
+      ..cubicTo(s.width * 0.6, s.height * 0.05, s.width * 0.3, s.height * 0.08, -20, s.height * 0.19)
+      ..close();
+    canvas.drawPath(top, paint);
+    final bottom = Path()
+      ..moveTo(s.width + 20, s.height * 0.84)
+      ..cubicTo(s.width * 0.78, s.height * 0.86, s.width * 0.6, s.height * 0.95, s.width * 0.56, s.height + 20)
+      ..lineTo(s.width + 20, s.height + 20)
+      ..close();
+    canvas.drawPath(bottom, paint);
+    if (leaves) {
+      final lp = Paint()..color = leaf;
+      void one(double x, double y, double rot, double w, double h) {
+        canvas.save();
+        canvas.translate(x, y);
+        canvas.rotate(rot);
+        final path = Path()
+          ..moveTo(0, 0)
+          ..quadraticBezierTo(w * 0.5, -h, w, 0)
+          ..quadraticBezierTo(w * 0.5, h, 0, 0);
+        canvas.drawPath(path, lp);
+        canvas.restore();
+      }
+
+      final x = s.width - 96, y = s.height * 0.1;
+      one(x, y + 26, -0.75, 46, 15);
+      one(x + 24, y + 30, -0.05, 44, 14);
+      final sp = Paint()
+        ..color = leaf
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(Offset(x + 20, y - 4), Offset(x + 24, y + 6), sp);
+      canvas.drawLine(Offset(x + 40, y - 6), Offset(x + 40, y + 6), sp);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BlobPainter old) => old.blob != blob || old.leaf != leaf || old.leaves != leaves;
+}
+
+/// "Mate" 글자 로고 + 작은 나뭇잎
+class MateLogo extends StatelessWidget {
+  final double size;
+  final Color? color;
+  const MateLogo({super.key, this.size = 40, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    final c = color ?? p.pri;
+    return Padding(
+      padding: EdgeInsets.only(right: size * 0.42, top: size * 0.2),
+      child: Stack(clipBehavior: Clip.none, children: [
+        Text('Mate', style: logoStyle(size, c)),
+        Positioned(right: -size * 0.4, top: -size * 0.22, child: CustomPaint(size: Size(size * 0.42, size * 0.4), painter: _LeafPainter(c))),
+      ]),
+    );
+  }
+}
+
+class _LeafPainter extends CustomPainter {
+  final Color color;
+  const _LeafPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    final a = Paint()..color = color.withAlpha(150);
+    final b = Paint()..color = color.withAlpha(210);
+    Path leaf(double x, double y, double w, double h) => Path()
+      ..moveTo(x, y + h)
+      ..quadraticBezierTo(x, y, x + w, y)
+      ..quadraticBezierTo(x + w, y + h, x, y + h);
+    canvas.drawPath(leaf(0, s.height * 0.35, s.width * 0.55, s.height * 0.6), a);
+    canvas.drawPath(leaf(s.width * 0.42, 0, s.width * 0.58, s.height * 0.6), b);
+  }
+
+  @override
+  bool shouldRepaint(_LeafPainter old) => old.color != color;
+}
+
+/// 사람 모양 동그란 아이콘 (과팅 카드의 팀원 자리)
+class PersonDot extends StatelessWidget {
+  final Color bg, fg;
+  final double size;
+  const PersonDot({super.key, required this.bg, required this.fg, this.size = 52});
+
+  @override
+  Widget build(BuildContext context) => Container(width: size, height: size, decoration: BoxDecoration(color: bg, shape: BoxShape.circle), child: Icon(Icons.person, size: size * 0.7, color: fg));
+}
+
+/// 점선 테두리 상자 (학생증 사진 올리는 칸)
+class DashedBox extends StatelessWidget {
+  final Widget child;
+  final Color color;
+  final double radius;
+  const DashedBox({super.key, required this.child, required this.color, this.radius = 26});
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(foregroundPainter: _DashPainter(color, radius), child: child);
+}
+
+class _DashPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  const _DashPainter(this.color, this.radius);
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round;
+    final path = Path()..addRRect(RRect.fromRectAndRadius(Offset.zero & s, Radius.circular(radius)).deflate(1));
+    for (final m in path.computeMetrics()) {
+      var d = 0.0;
+      while (d < m.length) {
+        canvas.drawPath(m.extractPath(d, d + 7), paint);
+        d += 12;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashPainter old) => old.color != color || old.radius != radius;
+}
+
+/// 두 개 중 하나 고르는 칸 (남 / 여). 시안의 둥근 테두리 안에 초록 알약이 들어 있어요.
+class TwoWaySeg extends StatelessWidget {
+  final List<(String, String)> items; // (값, 글자)
+  final String value;
+  final ValueChanged<String> onChanged;
+  const TwoWaySeg({super.key, required this.items, required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: p.line)),
+      child: Row(children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(width: 6),
+          Expanded(
+            child: Semantics(
+              button: true,
+              selected: value == items[i].$1,
+              child: Material(
+                color: value == items[i].$1 ? p.priSoft : p.surface,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  onTap: () => onChanged(items[i].$1),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    height: 46,
+                    alignment: Alignment.center,
+                    child: Text(items[i].$2, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: value == items[i].$1 ? p.priText : p.mut)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ]),
+    );
+  }
 }

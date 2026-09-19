@@ -28,24 +28,17 @@ class CalendarScreen extends LiveView {
     return Column(children: [
       SafeArea(
         bottom: false,
-        child: AppHeader(
-          left: Align(
-            alignment: Alignment.centerLeft,
-            child: Text.rich(TextSpan(children: [
-              TextSpan(text: '9월', style: disp(34, p.ink, height: 1.1)),
-              TextSpan(text: ' 2026', style: TextStyle(fontSize: 13, color: p.mut)),
-            ])),
-          ),
-          actions: [
-            Btn('지금 밥약', ic: 'utensils', kind: 'soft', small: true, expand: false, onTap: app.mealNow),
-            const BellBtn(),
-            const MeBtn(),
-          ],
+        child: BackHeader(
+          '',
+          pill: '달력',
+          titleWidget: Text.rich(TextSpan(children: [
+            TextSpan(text: '9월', style: disp(34, p.ink, height: 1.1)),
+            TextSpan(text: ' 2026', style: TextStyle(fontSize: 13, color: p.mut)),
+          ])),
         ),
       ),
       Expanded(
         child: Body(children: [
-          Txt('혜인님, 오늘도 혼자가 아니에요.', size: 14, muted: true),
           Row(children: [
             Expanded(child: Seg(items: const [('week', '주간'), ('month', '월간')], value: app.calView, onChanged: app.setView)),
             const SizedBox(width: 10),

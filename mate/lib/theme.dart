@@ -13,20 +13,23 @@ class TS {
 }
 
 class Pal {
-  final Color paper, surface, ink, mut, line, seg;
+  final Color paper, surface, tint, ink, mut, line, seg, blob;
   final Color pri, priInk, priSoft, priLine, priText;
   final Color featBg, featInk, featMut, featBtn, featBtnInk;
-  final Color heroBg, heroInk, heroMut, danger, lock;
+  final Color blue, blueBg, pink, pinkBg;
+  final Color danger, lock;
   final Map<String, TS> types;
   final List<TS> custom;
 
   const Pal({
     required this.paper,
     required this.surface,
+    required this.tint,
     required this.ink,
     required this.mut,
     required this.line,
     required this.seg,
+    required this.blob,
     required this.pri,
     required this.priInk,
     required this.priSoft,
@@ -37,9 +40,10 @@ class Pal {
     required this.featMut,
     required this.featBtn,
     required this.featBtnInk,
-    required this.heroBg,
-    required this.heroInk,
-    required this.heroMut,
+    required this.blue,
+    required this.blueBg,
+    required this.pink,
+    required this.pinkBg,
     required this.danger,
     required this.lock,
     required this.types,
@@ -47,25 +51,28 @@ class Pal {
   });
 
   static final Pal light = Pal(
-    paper: _c(0xF7F9F7),
+    paper: _c(0xFBFBF6),
     surface: _c(0xFFFFFF),
-    ink: _c(0x15201B),
-    mut: _c(0x55625B),
-    line: _c(0xDCE4DF),
-    seg: _c(0xE7EDE9),
-    pri: _c(0x1F6B4A),
+    tint: _c(0xEEF6F0),
+    ink: _c(0x17301F),
+    mut: _c(0x66766D),
+    line: _c(0xE0E8E2),
+    seg: _c(0xE8F0EA),
+    blob: _c(0xE3F1E7),
+    pri: _c(0x3A7B58),
     priInk: _c(0xFFFFFF),
-    priSoft: _c(0xE2F1E9),
-    priLine: _c(0xBFDCCB),
-    priText: _c(0x17472F),
-    featBg: _c(0x17472F),
+    priSoft: _c(0xDCEFE3),
+    priLine: _c(0x86BB9C),
+    priText: _c(0x1F4D37),
+    featBg: _c(0x2F6B4D),
     featInk: _c(0xFFFFFF),
-    featMut: _c(0xCDE5D7),
+    featMut: _c(0xD3E9DC),
     featBtn: _c(0xFFFFFF),
-    featBtnInk: _c(0x17472F),
-    heroBg: _c(0xFBEBD0),
-    heroInk: _c(0x4A3208),
-    heroMut: _c(0x6E5320),
+    featBtnInk: _c(0x1F4D37),
+    blue: _c(0x1F4E9E),
+    blueBg: _c(0xEAF0FD),
+    pink: _c(0xB8264F),
+    pinkBg: _c(0xFDEFF2),
     danger: _c(0xB4381F),
     lock: _c(0x123B2A),
     types: {
@@ -74,7 +81,7 @@ class Pal {
       'job': TS(_c(0xB7791F), _c(0xFAEFD7), _c(0x6B4A0F)),
       'meet': TS(_c(0x8A47B8), _c(0xF0E6F8), _c(0x5C2A80)),
       'dept': TS(_c(0x4B5563), _c(0xE9ECEF), _c(0x333B47)),
-      'opp': TS(_c(0x1F6B4A), _c(0xE2F1E9), _c(0x17472F)),
+      'opp': TS(_c(0x2F7A55), _c(0xDCEFE3), _c(0x1F4D37)),
     },
     custom: [
       TS(_c(0x0E8A8A), _c(0xDDF1F1), _c(0x0B5C5C)),
@@ -87,25 +94,28 @@ class Pal {
   );
 
   static final Pal dark = Pal(
-    paper: _c(0x101713),
+    paper: _c(0x0F1612),
     surface: _c(0x18211B),
+    tint: _c(0x1A261F),
     ink: _c(0xE8F0EB),
     mut: _c(0x9DABA4),
     line: _c(0x26332B),
     seg: _c(0x212D25),
+    blob: _c(0x15251C),
     pri: _c(0x56C795),
     priInk: _c(0x062015),
     priSoft: _c(0x1B3327),
-    priLine: _c(0x2C5A44),
+    priLine: _c(0x2F6449),
     priText: _c(0xBFE8D3),
     featBg: _c(0x1D4A34),
     featInk: _c(0xF2FAF5),
     featMut: _c(0xB5D3C2),
     featBtn: _c(0xE8F0EB),
     featBtnInk: _c(0x0F2A1D),
-    heroBg: _c(0x3A2E14),
-    heroInk: _c(0xF8E7C4),
-    heroMut: _c(0xD8BF8A),
+    blue: _c(0x9DBBFF),
+    blueBg: _c(0x18223A),
+    pink: _c(0xF29BB4),
+    pinkBg: _c(0x3A1B27),
     danger: _c(0xF08A72),
     lock: _c(0x0B241A),
     types: {
@@ -130,9 +140,13 @@ class Pal {
       MediaQuery.platformBrightnessOf(context) == Brightness.dark ? dark : light;
 }
 
-/// 제목용 글꼴(주아체). 본문은 폰 기본 글꼴을 써요.
+/// 제목용 굵은 글자. 시안처럼 폰 기본 글꼴의 굵은 글씨를 써요.
 TextStyle disp(double size, Color color, {double height = 1.25}) =>
-    TextStyle(fontFamily: 'Jua', fontSize: size, color: color, height: height);
+    TextStyle(fontSize: size, color: color, height: height, fontWeight: FontWeight.w800, letterSpacing: -0.4);
+
+/// 로고("Mate") 전용 손글씨 느낌 글꼴(주아체)
+TextStyle logoStyle(double size, Color color) =>
+    TextStyle(fontFamily: 'Jua', fontSize: size, color: color, height: 1.0, letterSpacing: 0.5);
 
 ThemeData buildTheme(Pal p, Brightness b) {
   return ThemeData(
@@ -156,6 +170,10 @@ IconData icon(String name) {
   switch (name) {
     case 'bell':
       return Icons.notifications_none;
+    case 'bellOn':
+      return Icons.notifications_active_outlined;
+    case 'bellOff':
+      return Icons.notifications_off_outlined;
     case 'leaf':
       return Icons.eco_outlined;
     case 'sparkle':
@@ -172,6 +190,8 @@ IconData icon(String name) {
       return Icons.movie_outlined;
     case 'plus':
       return Icons.add;
+    case 'plusCircle':
+      return Icons.add_circle_outline;
     case 'check':
       return Icons.check;
     case 'back':
@@ -194,6 +214,48 @@ IconData icon(String name) {
       return Icons.person_outline;
     case 'clock':
       return Icons.schedule;
+    case 'pin':
+      return Icons.place_outlined;
+    case 'chat':
+      return Icons.chat_bubble_outline;
+    case 'mask':
+      return Icons.theater_comedy_outlined;
+    case 'pencil':
+      return Icons.edit_outlined;
+    case 'gamepad':
+      return Icons.sports_esports_outlined;
+    case 'cafe':
+      return Icons.local_cafe_outlined;
+    case 'beer':
+      return Icons.sports_bar_outlined;
+    case 'gym':
+      return Icons.fitness_center;
+    case 'pc':
+      return Icons.desktop_windows_outlined;
+    case 'more':
+      return Icons.more_horiz;
+    case 'mail':
+      return Icons.mail_outline;
+    case 'lock':
+      return Icons.lock_outline;
+    case 'eye':
+      return Icons.visibility_outlined;
+    case 'eyeOff':
+      return Icons.visibility_off_outlined;
+    case 'logout':
+      return Icons.logout;
+    case 'school':
+      return Icons.school_outlined;
+    case 'book':
+      return Icons.menu_book_outlined;
+    case 'star':
+      return Icons.star_border;
+    case 'note':
+      return Icons.sticky_note_2_outlined;
+    case 'search':
+      return Icons.search;
+    case 'image':
+      return Icons.image_outlined;
     default:
       return Icons.circle_outlined;
   }

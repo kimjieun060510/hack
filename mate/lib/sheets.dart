@@ -5,7 +5,7 @@ import 'state.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// 아래에서 올라오는 창(시트)들이 모여 있어요: 일정 추가, 함께 신청, 밥약 신청, 알림, 내 정보, 시간 선택.
+/// 아래에서 올라오는 창(시트)들이 모여 있어요: 일정 추가, 함께 신청, 밥약 신청, 알림, 밥약 상세, 과팅 신청, 친구 추가, 시간 선택.
 
 Future<T?> _openSheet<T>(BuildContext context, Widget Function(BuildContext) builder) {
   return showModalBottomSheet<T>(
@@ -212,86 +212,103 @@ Future<void> showNotifSheet(BuildContext context) {
   });
 }
 
-// ------------------------------------------------------------------ 내 정보
+// ------------------------------------------------------------------ 밥약 찾기 · 랜덤 매칭 상세
 
-Future<void> showProfileSheet(BuildContext context) {
+Future<void> showMealDetailSheet(BuildContext context, RandMeal q) {
   return _openSheet<void>(context, (ctx) {
     final p = pal(ctx);
-    const src = [
-      ('icampus', '아이캠퍼스', '시간표 · 과제 자동 반영'),
-      ('dept', '학과 홈페이지', '공지 · 비교과 · 장학금'),
-      ('etta', '에브리타임', '내 계정으로, 내 폰에서만'),
-    ];
-    return SheetFrame(title: '내 정보', children: [
+    final applied = app.mealReqState[q.id] == 'applied';
+    return SheetFrame(title: '밥약 상세', children: [
       Row(children: [
-        Avatar('혜', size: 52, bg: p.priSoft, fg: p.priText),
-        const SizedBox(width: 12),
-        const Expanded(
+        Avatar(q.name[0], size: 56, bg: p.priSoft, fg: p.priText),
+        const SizedBox(width: 14),
+        Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Txt('혜인', bold: true, size: 17),
-            Txt('소프트웨어학과 · 26학번 · 인증 완료', size: 12, muted: true),
+            Txt(q.name, bold: true, size: 20),
+            Txt(q.dept, size: 13, muted: true),
           ]),
         ),
-      ]),
-      Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Lbl('정보를 가져올 곳'),
-        const SizedBox(height: 8),
-        ...gapped([for (final s in src) SwitchCard(title: s.$2, sub: s.$3, on: app.conn[s.$1] ?? false, onTap: () => app.toggleConn(s.$1))], 8),
+        Pill(q.time, style: TS(p.pri, p.priSoft, p.priText)),
       ]),
       AppCard(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const SectionHead('매너 경고', trailing: '3번 쌓이면 과팅 정지'),
-          const SizedBox(height: 10),
-          const Meter(),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [Icon(icon('chat'), size: 18, color: p.mut), const SizedBox(width: 8), Expanded(child: Txt('“${q.msg}”', size: 15))]),
+          const SizedBox(height: 8),
+          Txt('랜덤 매칭은 같은 학교 새내기와 이어줘요. 수락되면 서로 이름이 공개돼요.', size: 12, muted: true, height: 1.5),
         ]),
       ),
-      Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Lbl('데모 둘러보기'),
-        const SizedBox(height: 8),
-        ...gapped([
-          for (var i = 0; i < kJumps.length; i++)
-            _JumpRow(
-              label: '${i + 1}. ${kJumps[i].$1}',
-              onTap: () {
-                Navigator.of(ctx).pop();
-                app.jump(i);
-              },
-            ),
-        ], 8),
-      ]),
-      LinkBtn('처음 상태로 되돌리기', onTap: () {
+      Btn(applied ? '신청했어요' : '같이 먹기 신청', ic: applied ? 'check' : 'utensils', onTap: applied
+          ? null
+          : () {
+              Navigator.of(ctx).pop();
+              app.mealApplyRandom(q.id);
+            }),
+    ]);
+  });
+}
+
+// ------------------------------------------------------------------ 과팅 신청
+
+Future<void> showMeetApplySheet(BuildContext context, MeetPost post) {
+  return _openSheet<void>(context, (ctx) {
+    final p = pal(ctx);
+    return SheetFrame(title: '과팅 신청', children: [
+      AppCard(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [Icon(icon('calendar'), size: 20, color: p.pri), const SizedBox(width: 8), Txt('${shortDate(post.key)} ${post.time}', bold: true, size: 16)]),
+          const SizedBox(height: 6),
+          Row(children: [Icon(icon('pin'), size: 20, color: p.pri), const SizedBox(width: 8), Txt(post.place, size: 15)]),
+          const SizedBox(height: 6),
+          Row(children: [
+            Icon(icon('users'), size: 20, color: p.pri),
+            const SizedBox(width: 8),
+            Txt('${post.size.replaceAll(':', ' : ')} 과팅 · 남 ${post.m.length} · 여 ${post.f.length}', size: 15),
+          ]),
+        ]),
+      ),
+      const SafeCard(title: '매너 지킴이', body: '만난 뒤에 불편했다면 익명으로 경고를 보낼 수 있어요. 경고가 3번 쌓이면 과팅이 몇 주간 정지돼요.'),
+      Btn('우리 팀으로 신청하기', ic: 'heart', onTap: () {
         Navigator.of(ctx).pop();
-        app.resetAll();
+        app.meetApply(post.id);
       }),
     ]);
   });
 }
 
-class _JumpRow extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  const _JumpRow({required this.label, required this.onTap});
+// ------------------------------------------------------------------ 우리팀에 친구 추가
 
-  @override
-  Widget build(BuildContext context) {
-    final p = pal(context);
-    return Material(
-      color: p.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: BorderSide(color: p.line)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          height: 46,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Row(children: [
-            Expanded(child: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: p.ink))),
-            Icon(icon('chev'), color: p.mut),
-          ]),
-        ),
+Future<void> showFriendPickSheet(BuildContext context) {
+  return _openSheet<void>(context, (ctx) {
+    final p = pal(ctx);
+    final full = app.meet.members.length + 1 >= app.meetCap(app.meet.size);
+    return SheetFrame(title: '우리팀 친구 추가', children: [
+      Txt(
+        full ? '우리팀이 가득 찼어요. 다른 친구를 넣으려면 먼저 빼주세요.' : '${app.meet.size.replaceAll(':', ' : ')} 과팅은 나를 포함해 ${app.meetCap(app.meet.size)}명까지 함께할 수 있어요.',
+        size: 13,
+        muted: !full,
+        color: full ? p.danger : null,
+        bold: full,
       ),
-    );
-  }
+      AppCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Column(children: [
+          for (var i = 0; i < kFriends.length; i++)
+            PersonRow(
+              first: i == 0,
+              avatar: Avatar(kFriends[i].n[0], style: p.types[kFriends[i].t]),
+              name: kFriends[i].n,
+              sub: kFriends[i].d,
+              trailing: AppSwitch(
+                on: app.meet.members.contains(i),
+                label: '${kFriends[i].n} 우리팀에 추가',
+                onTap: full && !app.meet.members.contains(i) ? () {} : () => app.meetToggleMember(i),
+              ),
+            ),
+        ]),
+      ),
+      Btn('완료', onTap: () => Navigator.of(ctx).pop()),
+    ]);
+  });
 }
 
 // ------------------------------------------------------------------ 시간 고르기 (스크롤)

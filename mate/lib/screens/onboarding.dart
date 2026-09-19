@@ -5,23 +5,96 @@ import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
-/// 처음 시작: 1) 학생증 인증  2) 관심사 고르기 (딱 한 번)
+/// 처음 시작: 로그인 · 회원가입(학생증 인증) · 관심사 고르기(딱 한 번)
 
-class _Progress extends StatelessWidget {
-  final int step; // 1 또는 2
-  const _Progress(this.step);
+// ------------------------------------------------------------------ 로그인
+
+class LoginScreen extends LiveView {
+  const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget body(BuildContext context) {
     final p = pal(context);
-    return Row(children: [
-      for (var i = 1; i <= 2; i++) ...[
-        if (i > 1) const SizedBox(width: 6),
-        Expanded(child: Container(height: 4, decoration: BoxDecoration(color: i <= step ? p.pri : p.line, borderRadius: BorderRadius.circular(2)))),
-      ],
-    ]);
+    return Backdrop(
+      child: SafeArea(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(24, 46, 24, 24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const Padding(padding: EdgeInsets.only(left: 6), child: UnderTitle('로그인')),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: p.surface,
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: const [BoxShadow(color: Color(0x141E3A2A), blurRadius: 30, offset: Offset(0, 10))],
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Container(
+                  height: 150,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: p.tint, borderRadius: BorderRadius.circular(24)),
+                  child: const MateLogo(size: 62),
+                ),
+                const SizedBox(height: 18),
+                AppInput(controller: app.idC, hint: '학번', prefix: 'school', pill: true, keyboardType: TextInputType.number, action: TextInputAction.next),
+                const SizedBox(height: 12),
+                AppInput(
+                  controller: app.pwC,
+                  hint: '비밀번호',
+                  prefix: 'lock',
+                  pill: true,
+                  obscure: !app.showPw,
+                  action: TextInputAction.done,
+                  onSubmitted: (_) => app.login(),
+                  suffix: IconButton(
+                    tooltip: app.showPw ? '비밀번호 숨기기' : '비밀번호 보기',
+                    onPressed: app.togglePw,
+                    icon: Icon(icon(app.showPw ? 'eye' : 'eyeOff'), color: p.mut),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Semantics(
+                  checked: app.autoLogin,
+                  label: '자동 로그인',
+                  child: InkWell(
+                    onTap: app.toggleAuto,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                      child: Row(children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 140),
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: app.autoLogin ? p.pri : Colors.transparent,
+                            borderRadius: BorderRadius.circular(7),
+                            border: Border.all(color: app.autoLogin ? p.pri : p.mut, width: 2),
+                          ),
+                          child: app.autoLogin ? Icon(icon('check'), size: 18, color: p.priInk) : null,
+                        ),
+                        const SizedBox(width: 10),
+                        const Txt('자동 로그인', size: 16),
+                      ]),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Btn('로그인', kind: 'mint', onTap: app.login),
+                const SizedBox(height: 10),
+                Center(child: Btn('회원가입 / 인증', kind: 'soft', small: true, expand: false, onTap: app.toSignup)),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
   }
 }
+
+// ------------------------------------------------------------------ 회원가입 · 학생증 인증
 
 class VerifyScreen extends LiveView {
   const VerifyScreen({super.key});
@@ -30,31 +103,37 @@ class VerifyScreen extends LiveView {
   Widget body(BuildContext context) {
     final p = pal(context);
     final st = app.verify;
-    final done = st == 'done';
     final scanning = st == 'scanning';
     return SafeArea(
       bottom: false,
       child: Column(children: [
+        const BackHeader(''),
         Expanded(
-          child: Body(padding: const EdgeInsets.fromLTRB(20, 22, 20, 20), children: [
-            const _Progress(1),
-            const SizedBox(height: 4),
-            Text('1 / 2 · 새내기 인증', style: TextStyle(color: p.pri, fontWeight: FontWeight.w700, fontSize: 13)),
-            Heading('학생증 한 장이면\n계정이 만들어져요', size: 32, color: p.ink),
-            const Txt('같은 학교 새내기끼리만 만날 수 있도록 학생증으로 한 번만 확인해요.', muted: true, height: 1.6),
+          child: Body(padding: EdgeInsets.fromLTRB(22, 0, 22, 24 + MediaQuery.paddingOf(context).bottom), gap: 16, children: [
+            Padding(padding: const EdgeInsets.only(top: 4, bottom: 4), child: Text('학생증 한 장이면\n계정이 만들어져요', style: disp(32, p.ink, height: 1.3))),
             _ScanBox(state: st),
             Row(children: [
-              Expanded(flex: 3, child: Btn(done ? '다시 찍기' : '사진 찍기', ic: 'camera', onTap: scanning ? null : app.verifyShot)),
-              const SizedBox(width: 8),
-              Expanded(flex: 2, child: Btn('앨범', kind: 'line', onTap: app.verifyShot)),
+              Expanded(flex: 3, child: Btn(st == 'done' ? '다시 찍기' : '사진 찍기', ic: 'camera', radius: 18, onTap: scanning ? null : app.verifyShot)),
+              const SizedBox(width: 10),
+              Expanded(flex: 2, child: Btn('앨범', ic: 'image', kind: 'line', radius: 18, onTap: scanning ? null : app.verifyShot)),
             ]),
-            const AiCard(ic: 'shield', center: true, child: Txt('학과와 학번은 학생증에서 자동으로 입력돼요. 과팅에서는 학과·학번만 보여줘요.', size: 13, height: 1.5)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(color: p.priSoft, borderRadius: BorderRadius.circular(18)),
+              child: Row(children: [
+                Icon(icon('shield'), size: 26, color: p.pri),
+                const SizedBox(width: 12),
+                const Expanded(child: Txt('학과와 학번은 학생증에서 자동으로 입력돼요. 미팅과 과팅에서는 학과·학번만 보여줘요.', size: 14, height: 1.55)),
+              ]),
+            ),
+            Field('이름', child: AppInput(controller: app.signNameC, hint: '이름을 입력해주세요', action: TextInputAction.next)),
+            Field('학번', child: AppInput(controller: app.signNoC, hint: '학번을 입력해주세요', keyboardType: TextInputType.number, action: TextInputAction.next)),
+            Field('학과', child: AppInput(controller: app.signDeptC, hint: '학과를 입력해주세요', action: TextInputAction.done)),
+            Field('성별', child: TwoWaySeg(items: const [('male', '남'), ('female', '여')], value: app.gender, onChanged: app.setGender)),
+            if (app.signErr.isNotEmpty) Text(app.signErr, textAlign: TextAlign.center, style: TextStyle(color: p.danger, fontSize: 14, fontWeight: FontWeight.w700)),
+            Btn('제출', radius: 20, onTap: app.submitSignup),
           ]),
         ),
-        CtaBar(children: [
-          Btn('다음', onTap: done ? app.obNext : null),
-          LinkBtn('건너뛰고 둘러보기', onTap: app.obSkip),
-        ]),
       ]),
     );
   }
@@ -70,35 +149,35 @@ class _ScanBox extends StatelessWidget {
     final done = state == 'done';
     Widget inner;
     if (state == 'scanning') {
-      inner = const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Spinner(), SizedBox(height: 10), Txt('학생증을 읽고 있어요', bold: true)]);
+      inner = const Column(mainAxisAlignment: MainAxisAlignment.center, children: [Spinner(), SizedBox(height: 14), Txt('학생증을 읽고 있어요', bold: true, size: 16)]);
     } else if (done) {
       inner = Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(icon('check'), size: 40, color: p.pri),
-        const SizedBox(height: 8),
-        const Txt('인증이 끝났어요', bold: true),
-        const Txt('소프트웨어학과 · 26학번', size: 12, muted: true),
+        Container(width: 84, height: 84, decoration: BoxDecoration(color: p.priSoft, shape: BoxShape.circle), child: Icon(icon('check'), size: 42, color: p.pri)),
+        const SizedBox(height: 14),
+        const Txt('학생증 사진이 입력됐어요', bold: true, size: 16),
+        const Txt('아래 정보를 확인해주세요', size: 13, muted: true),
       ]);
     } else {
       inner = Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(icon('idcard'), size: 40, color: p.pri),
-        const SizedBox(height: 8),
-        const Txt('학생증을 사각형 안에 맞춰주세요', bold: true),
-        const Txt('학번과 학과가 잘 보이게 찍어주세요', size: 12, muted: true),
+        Container(width: 84, height: 84, decoration: BoxDecoration(color: p.priSoft, shape: BoxShape.circle), child: Icon(icon('idcard'), size: 42, color: p.pri)),
+        const SizedBox(height: 18),
+        const Txt('학생증 사진을 입력해주세요.', bold: true, size: 16),
       ]);
     }
-    return Container(
-      height: 200,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: p.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: done ? p.pri : p.priLine, width: 2),
+    return DashedBox(
+      color: p.priLine,
+      child: Container(
+        height: 250,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(26)),
+        child: inner,
       ),
-      child: inner,
     );
   }
 }
+
+// ------------------------------------------------------------------ 관심사 고르기 (딱 한 번)
 
 class InterestScreen extends LiveView {
   const InterestScreen({super.key});
@@ -111,35 +190,40 @@ class InterestScreen extends LiveView {
       ('dept', '학과 홈페이지', '공지·비교과·장학금·산학협력 소식을 모아와요'),
       ('etta', '에브리타임', '내 계정으로, 내 폰에서만 불러와서 나 혼자 봐요'),
     ];
-    return SafeArea(
-      bottom: false,
-      child: Column(children: [
-        Expanded(
-          child: Body(padding: const EdgeInsets.fromLTRB(20, 22, 20, 20), children: [
-            const _Progress(2),
-            const SizedBox(height: 4),
-            Text('2 / 2 · 관심사', style: TextStyle(color: p.pri, fontWeight: FontWeight.w700, fontSize: 13)),
-            Heading('딱 한 번만 골라요\n나머지는 앱이 해요', size: 32, color: p.ink),
-            const Txt('고른 분야의 새 소식이 올라오면 “이거 관심 있으세요?” 하고 알려줄게요.', muted: true, height: 1.6),
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Lbl('어떤 소식이 궁금해요?', small: '추천 탭에서 언제든 바꿀 수 있어요'),
-              const SizedBox(height: 8),
-              ChipWrap(children: [for (final e in kCats.entries) PillChip(e.value, on: app.cats[e.key] ?? false, onTap: () => app.toggleCat(e.key))]),
+    return Backdrop(
+      leaves: false,
+      child: SafeArea(
+        bottom: false,
+        child: Column(children: [
+          const BackHeader('관심사 고르기'),
+          Expanded(
+            child: Body(padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), children: [
+              Text('관심사', style: TextStyle(color: p.pri, fontWeight: FontWeight.w700, fontSize: 13)),
+              Heading('딱 한 번만 골라요\n나머지는 앱이 해요', size: 30, color: p.ink),
+              const Txt('고른 분야의 새 소식이 올라오면 “이거 관심 있으세요?” 하고 알려줄게요.', muted: true, height: 1.6),
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                const Lbl('어떤 소식이 궁금해요?', small: '추천 탭에서 언제든 바꿀 수 있어요'),
+                const SizedBox(height: 8),
+                ChipWrap(children: [for (final e in kCats.entries) PillChip(e.value, on: app.cats[e.key] ?? false, onTap: () => app.toggleCat(e.key))]),
+              ]),
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                const Lbl('관심 분야'),
+                const SizedBox(height: 8),
+                ChipWrap(children: [for (final f in kFields) PillChip(f, on: app.fields[f] ?? false, onTap: () => app.toggleField(f))]),
+              ]),
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                const Lbl('소식을 가져올 곳'),
+                const SizedBox(height: 8),
+                ...gapped([for (final s in src) SwitchCard(title: s.$2, sub: s.$3, on: app.conn[s.$1] ?? false, onTap: () => app.toggleConn(s.$1))], 8),
+              ]),
             ]),
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Lbl('관심 분야'),
-              const SizedBox(height: 8),
-              ChipWrap(children: [for (final f in kFields) PillChip(f, on: app.fields[f] ?? false, onTap: () => app.toggleField(f))]),
-            ]),
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Lbl('소식을 가져올 곳'),
-              const SizedBox(height: 8),
-              ...gapped([for (final s in src) SwitchCard(title: s.$2, sub: s.$3, on: app.conn[s.$1] ?? false, onTap: () => app.toggleConn(s.$1))], 8),
-            ]),
+          ),
+          CtaBar(children: [
+            Btn('시작하기', onTap: app.obDone),
+            LinkBtn('나중에 고를게요', onTap: app.obLater),
           ]),
-        ),
-        CtaBar(children: [Btn('시작하기', onTap: app.obDone)]),
-      ]),
+        ]),
+      ),
     );
   }
 }
