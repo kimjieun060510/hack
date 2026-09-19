@@ -173,6 +173,24 @@ class Ev {
     this.g,
     this.oppId,
   });
+
+  /// 일부만 바꾼 새 일정을 만들어요 (시간표 · 과제 · 직접 만든 일정 모두 고칠 수 있어요).
+  /// hours 는 알바 같은 '개인 일정'의 시간 수예요. clearHours 를 켜면 비워요.
+  Ev copyWith({String? key, String? t, String? end, String? type, String? title, String? sub, double? hours, bool clearHours = false}) => Ev(
+        id: id,
+        key: key ?? this.key,
+        t: t ?? this.t,
+        end: end ?? this.end,
+        type: type ?? this.type,
+        title: title ?? this.title,
+        sub: sub ?? this.sub,
+        mine: mine,
+        hours: clearHours ? null : (hours ?? this.hours),
+        src: src,
+        cat: cat,
+        g: g,
+        oppId: oppId,
+      );
 }
 
 /// 직접 만든 일정 종류

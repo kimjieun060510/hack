@@ -123,6 +123,80 @@ class _AddSheetState extends State<_AddSheet> {
   }
 }
 
+// ------------------------------------------------------------------ 일정 수정 · 삭제
+
+/// 달력의 어떤 일정이든(시간표 · 과제 · 직접 만든 일정 · 기회) 눌러서 고치거나 지울 수 있어요.
+Future<void> showEditSheet(BuildContext context, Ev e) {
+  app.prepareEdit(e);
+  return _openSheet<void>(context, (_) => _EditSheet(ev: e));
+}
+
+class _EditSheet extends StatefulWidget {
+  final Ev ev;
+  const _EditSheet({required this.ev});
+
+  @override
+  State<_EditSheet> createState() => _EditSheetState();
+}
+
+class _EditSheetState extends State<_EditSheet> {
+  String? _err;
+
+  void _save() {
+    final e = app.submitEdit();
+    if (e != null) {
+      setState(() => _err = e);
+      return;
+    }
+    Navigator.of(context).pop();
+  }
+
+  void _delete() {
+    Navigator.of(context).pop();
+    app.deleteEvent(widget.ev.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = pal(context);
+    // '기회'는 추천에서 온 일정만 고를 수 있어요 (다른 일정을 기회로 바꾸면 달력에서 사라질 수 있어서요)
+    final types = app.filterList().skip(1).where((t) => t.$1 != 'opp' || widget.ev.type == 'opp').toList();
+    const noEnd = '없음';
+    return ListenableBuilder(
+      listenable: app,
+      builder: (c, _) => SheetFrame(title: '일정 수정', children: [
+        if (widget.ev.src == 'icampus')
+          const Txt('아이캠퍼스에서 가져온 일정이에요. 여기서 고쳐도 앱 안에서만 바뀌고, 아이캠퍼스는 그대로예요.', size: 12, muted: true, height: 1.5),
+        Field('제목', child: AppInput(controller: app.editTitleC, hint: '일정 이름', maxLength: 40)),
+        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const Lbl('종류'),
+          const SizedBox(height: 8),
+          ChipWrap(children: [
+            for (final t in types) PillChip(t.$2, on: app.editType == t.$1, dot: tsOf(c, t.$1), onTap: () => app.setEditType(t.$1)),
+          ]),
+        ]),
+        Field('날짜 (직접 입력)', child: AppInput(controller: app.editDateC, hint: '예: 9/28', maxLength: 10, keyboardType: TextInputType.datetime)),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: TimeField(label: '시작', value: app.editStart, options: timeOpts('00:00', '23:30'), onPicked: (v) => app.setEditTime(true, v))),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TimeField(
+              label: '끝',
+              value: app.editEnd.isEmpty ? noEnd : app.editEnd,
+              options: [noEnd, ...timeOpts('00:30', '24:00')],
+              onPicked: (v) => app.setEditTime(false, v == noEnd ? '' : v),
+            ),
+          ),
+        ]),
+        Field('메모', child: AppInput(controller: app.editSubC, hint: '장소, 메모 등 (비워도 돼요)', maxLength: 60)),
+        if (_err != null) Text(_err!, style: TextStyle(color: p.danger, fontSize: 13, fontWeight: FontWeight.w700)),
+        Btn('저장', onTap: _save),
+        Btn('이 일정 삭제', ic: 'x', kind: 'line', onTap: _delete),
+      ]),
+    );
+  }
+}
+
 // ------------------------------------------------------------------ 친구와 함께 신청
 
 Future<void> showShareSheet(BuildContext context, String oppId) {
