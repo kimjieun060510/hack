@@ -456,12 +456,6 @@ class AppState extends ChangeNotifier {
     _n();
   }
 
-  void _root(String s) {
-    _hist.clear();
-    if (s != 'home') _hist.add('home');
-    screen = s;
-  }
-
   void resetFlows() {
     _searchT?.cancel();
     meal = MealState();
@@ -532,41 +526,6 @@ class AppState extends ChangeNotifier {
     banner = null;
     _n();
     return true;
-  }
-
-  void jump(int i) {
-    _clearOverlays();
-    resetFlows();
-    _pending = null;
-    if (i == 0) {
-      _hist
-        ..clear()
-        ..add('login');
-      screen = 'verify';
-      _resetSignup();
-      interestDone = false;
-      _n();
-      return;
-    }
-    interestDone = true;
-    if (i == 1) {
-      calView = 'week';
-      sel = kToday;
-      filter = 'all';
-      _root('cal');
-    }
-    if (i == 2) _root('reco');
-    if (i == 3) {
-      mealView = 'find';
-      _root('meal');
-    }
-    if (i == 4) {
-      meetView = 'find';
-      _root('meet');
-    }
-    if (i == 5) _root('play');
-    if (i == 6) push = true;
-    _n();
   }
 
   void resetAll() {
@@ -694,12 +653,6 @@ class AppState extends ChangeNotifier {
     _pending = null;
     screen = to;
     _n();
-  }
-
-  /// 내 정보에서 관심사 다시 고르기
-  void redoInterest() {
-    _pending = screen == 'me' ? 'reco' : screen;
-    open('interest');
   }
 
   void toggleCat(String k) {

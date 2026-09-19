@@ -466,22 +466,6 @@ class AvatarStack extends StatelessWidget {
   }
 }
 
-class Meter extends StatelessWidget {
-  final int n, on;
-  const Meter({super.key, this.n = 3, this.on = 0});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = pal(context);
-    return Row(children: [
-      for (var i = 0; i < n; i++) ...[
-        if (i > 0) const SizedBox(width: 6),
-        Expanded(child: Container(height: 8, decoration: BoxDecoration(color: i < on ? p.pri : p.line, borderRadius: BorderRadius.circular(4)))),
-      ],
-    ]);
-  }
-}
-
 class AppSwitch extends StatelessWidget {
   final bool on;
   final VoidCallback onTap;

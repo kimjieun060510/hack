@@ -215,11 +215,6 @@ class MeScreen extends LiveView {
   @override
   Widget body(BuildContext context) {
     final p = pal(context);
-    const src = [
-      ('icampus', '아이캠퍼스', '시간표 · 과제 자동 반영'),
-      ('dept', '학과 홈페이지', '공지 · 비교과 · 장학금'),
-      ('etta', '에브리타임', '내 계정으로, 내 폰에서만'),
-    ];
     return Backdrop(
       child: SafeArea(
         bottom: false,
@@ -256,29 +251,6 @@ class MeScreen extends LiveView {
                   Center(child: Btn('로그아웃', ic: 'logout', kind: 'line', small: true, expand: false, onTap: app.logout)),
                 ]),
               ),
-              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                const Lbl('정보를 가져올 곳'),
-                const SizedBox(height: 8),
-                ...gapped([for (final s in src) SwitchCard(title: s.$2, sub: s.$3, on: app.conn[s.$1] ?? false, onTap: () => app.toggleConn(s.$1))], 8),
-                const SizedBox(height: 8),
-                Btn('관심사 다시 고르기', ic: 'sparkle', kind: 'line', small: true, onTap: app.redoInterest),
-              ]),
-              AppCard(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  const SectionHead('매너 경고', trailing: '3번 쌓이면 과팅 정지'),
-                  const SizedBox(height: 10),
-                  const Meter(),
-                ]),
-              ),
-              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                const Lbl('데모 둘러보기'),
-                const SizedBox(height: 8),
-                ...gapped([
-                  for (var i = 0; i < kJumps.length; i++)
-                    _JumpRow(label: '${i + 1}. ${kJumps[i].$1}', sub: kJumps[i].$2, onTap: () => app.jump(i)),
-                ], 8),
-              ]),
-              LinkBtn('처음 상태로 되돌리기', onTap: app.resetAll),
             ]),
           ),
         ]),
@@ -306,37 +278,6 @@ class _InfoRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(child: valueWidget ?? Text(value ?? '', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: p.ink))),
       ]),
-    );
-  }
-}
-
-class _JumpRow extends StatelessWidget {
-  final String label, sub;
-  final VoidCallback onTap;
-  const _JumpRow({required this.label, required this.sub, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = pal(context);
-    return Material(
-      color: p.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: p.line)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: p.ink)),
-                Text(sub, style: TextStyle(fontSize: 12, height: 1.4, color: p.mut)),
-              ]),
-            ),
-            Icon(icon('chev'), color: p.mut),
-          ]),
-        ),
-      ),
     );
   }
 }
