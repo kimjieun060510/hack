@@ -5,9 +5,10 @@ import 'data.dart';
 import 'shell.dart';
 import 'theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   runApp(const MateApp());
 }
 
@@ -22,6 +23,19 @@ class MateApp extends StatelessWidget {
       theme: buildTheme(Pal.light, Brightness.light),
       darkTheme: buildTheme(Pal.dark, Brightness.dark),
       themeMode: ThemeMode.system,
+      builder: (context, child) {
+        final dark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+            statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: const Shell(),
     );
   }
