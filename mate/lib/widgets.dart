@@ -537,7 +537,7 @@ class SwitchCard extends StatelessWidget {
   }
 }
 
-/// 소식을 가져올 곳 한 줄. 켜면 학교·학과는 홈페이지를 읽고, 아이캠퍼스·에타는 연동 전 예시를 넣어요.
+/// 소식을 가져올 곳 한 줄. 켜면 학교·학과·단대는 홈페이지를 읽고, 아이캠퍼스·에타는 연동 전 예시를 넣어요.
 class SourceCard extends StatelessWidget {
   final FeedDef s;
   const SourceCard({super.key, required this.s});

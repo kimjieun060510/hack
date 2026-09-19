@@ -157,7 +157,7 @@ class AppState extends ChangeNotifier {
     events = _initialEvents();
     cats = {'edu': true, 'schol': true, 'lab': true, 'vol': true, 'club': true, 'etc': true};
     fields = {'개발·IT': true, '경영·마케팅': true};
-    conn = {'icampus': true, 'school': true, 'dept': true, 'etta': true};
+    conn = {'icampus': true, 'school': true, 'dept': true, 'college': true, 'etta': true};
     opps = List.of(kOpps);
     feedStatus
       ..clear()
@@ -220,7 +220,7 @@ class AppState extends ChangeNotifier {
         end: '',
         type: 'opp',
         title: o.title,
-        sub: '기회 추천에서 추가 · ${o.src}',
+        sub: o.whenKind == 'event' ? '기회 추천에서 추가 · ${o.src} · 행사' : '기회 추천에서 추가 · ${o.src}',
         cat: o.cat,
         g: o.g,
         oppId: o.id,
@@ -342,9 +342,8 @@ class AppState extends ChangeNotifier {
 
   String aiText(String key) {
     final l = loadOf(key);
-    final p = key.split('-');
-    final prev = '${p[0]}-${int.parse(p[1]) - 1}';
-    final pl = loadOf(prev);
+    final d = dateOf(key).subtract(const Duration(days: 1));
+    final pl = loadOf('${d.month}-${d.day}');
     if (l.n == 0) return '비어있는 하루예요. 밥약이나 산책으로 기분 전환 어때요?';
     if (l.assigns >= 3) return '마감이 ${l.assigns}개예요. 충분히 자고, 영양가 있는 저녁을 챙겨요.';
     if (l.jobH >= 6) return '알바가 ${fmtH(l.jobH)}시간이에요. 내일은 쉬어가는 날로 비워두는 게 좋겠어요.';
@@ -832,7 +831,6 @@ class AppState extends ChangeNotifier {
 
   void setView(String v) {
     calView = v;
-    if (v == 'week' && !kWeek.map((d) => '9-$d').contains(sel)) sel = kToday;
     _n();
   }
 
@@ -859,8 +857,10 @@ class AppState extends ChangeNotifier {
       showToast('달력에서 뺐어요');
     } else {
       events.add(oppEvent(o));
-      if (o.key.startsWith('9-')) sel = o.key;
-      showToast('${shortDate(o.key)} 마감일을 달력에 추가했어요');
+      sel = o.key;
+      if (calView == 'week' && !weekKeys(kToday).contains(o.key)) calView = 'month';
+      final label = o.whenKind == 'event' ? '행사 당일' : (o.whenKind == 'posted' ? '날짜' : '마감일');
+      showToast('${shortDate(o.key)} ${label}을 달력에 추가했어요');
     }
   }
 

@@ -5,12 +5,12 @@ import 'package:http/http.dart' as http;
 
 import 'data.dart';
 
-/// 아이캠퍼스 · 학교/학과 홈페이지 · 에브리타임에서 소식을 가져오는 층이에요.
+/// 아이캠퍼스 · 학교/학과/단대 홈페이지 · 에브리타임에서 소식을 가져오는 층이에요.
 ///
 /// 소프트웨어학과 **학부생**에게 필요한 글만 남깁니다.
 /// 대학원 공지·교수 채용·영어 세미나 포스터는 빼요.
 ///
-/// - 학교·학과: 로그인 없이 볼 수 있는 HTML을 읽어요.
+/// - 학교·학과·소프트웨어융합대학: 로그인 없이 볼 수 있는 HTML을 읽어요.
 /// - 아이캠퍼스·에브리타임: 공식 공개 API가 없어서 같은 JSON 계약의 예시를 써요.
 
 class FeedBoard {
@@ -71,6 +71,16 @@ const List<FeedDef> kFeedSources = [
       FeedBoard('https://cse.skku.edu/cse/notice_job.do?mode=list&articleLimit=20', '취업·인턴'),
       FeedBoard('https://cse.skku.edu/cse/notice_recruit.do?mode=list&articleLimit=20', '학부연구생'),
       FeedBoard('https://cse.skku.edu/cse/notice_senimar.do?mode=list&articleLimit=20', '공모전·대회'),
+    ],
+  ),
+  FeedDef(
+    id: 'college',
+    name: '소프트웨어융합대학',
+    sub: '단대 학부 공지·산학·비교과만 가져와요. 대학원 게시판은 읽지 않아요.',
+    needsLogin: false,
+    snapshotAsset: 'assets/feeds/college.json',
+    boards: [
+      FeedBoard('https://sw.skku.edu/sw/notice.do?mode=list&articleLimit=20', '학부 공지'),
     ],
   ),
   FeedDef(
@@ -167,25 +177,64 @@ class SkkuBoardParser {
   }
 }
 
-/// 제목 안의 "9.27", "~10/7", "9.23.(수)~10.13" 같은 마감일을 찾아요. 없으면 게시일.
-({String key, String time}) noticeWhen(String title, String posted) {
-  final dates = <(int, int)>[];
-  for (final m in RegExp(r'(?:20)?(\d{2})?[.\-/년]?\s*(\d{1,2})[.\-/월]\s*(\d{1,2})').allMatches(title)) {
-    final month = int.tryParse(m.group(2) ?? '');
-    final day = int.tryParse(m.group(3) ?? '');
+class _DateHit {
+  final int month, day, start, end;
+  final bool deadline;
+  final String? time;
+  const _DateHit(this.month, this.day, this.start, this.end, this.deadline, this.time);
+  String get key => '$month-$day';
+}
+
+String? _timeIn(String s) {
+  final colon = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(s);
+  if (colon != null) return '${colon.group(1)!.padLeft(2, '0')}:${colon.group(2)}';
+  final hm = RegExp(r'(\d{1,2})시\s*(\d{1,2})분').firstMatch(s);
+  if (hm != null) return '${hm.group(1)!.padLeft(2, '0')}:${hm.group(2)!.padLeft(2, '0')}';
+  final h = RegExp(r'(\d{1,2})시').firstMatch(s);
+  if (h != null) return '${h.group(1)!.padLeft(2, '0')}:00';
+  return null;
+}
+
+bool _looksEventNotice(String title) {
+  return RegExp(r'설명회|특강|세미나|포럼|개최|강연|워크숍|워크샵|컨퍼런스|만남').hasMatch(title);
+}
+
+/// 제목 안의 마감일(~9/22, 10.13까지) 또는 행사 당일(9/30 18:00)을 찾아요. 없으면 게시일.
+({String key, String time, String kind}) noticeWhen(String title, String posted) {
+  final hits = <_DateHit>[];
+  final dateRe = RegExp(r'(?:20\d{2}\s*[.\-/년]\s*)?(\d{1,2})[.\-/월]\s*(\d{1,2})(?:일)?');
+  for (final m in dateRe.allMatches(title)) {
+    final month = int.tryParse(m.group(1) ?? '');
+    final day = int.tryParse(m.group(2) ?? '');
     if (month == null || day == null || month < 1 || month > 12 || day < 1 || day > 31) continue;
-    dates.add((month, day));
+    if (title.substring(m.end).startsWith('학기')) continue;
+    final before = title.substring((m.start - 10).clamp(0, title.length), m.start);
+    final after = title.substring(m.end, (m.end + 14).clamp(0, title.length));
+    final deadline = RegExp(r'~|～|까지|마감|기한').hasMatch('$before$after') || RegExp(r'접수|신청').hasMatch(before);
+    hits.add(_DateHit(month, day, m.start, m.end, deadline, _timeIn(after)));
   }
-  String key;
-  if (dates.isNotEmpty) {
-    final last = dates.last;
-    key = '${last.$1}-${last.$2}';
+  if (hits.isEmpty) {
+    return (key: postedToKey(posted) ?? kToday, time: '23:59', kind: 'posted');
+  }
+
+  _DateHit pick;
+  String kind;
+  if (_looksEventNotice(title)) {
+    final events = hits.where((h) => !h.deadline).toList();
+    if (events.isNotEmpty) {
+      pick = events.reversed.firstWhere((h) => h.time != null, orElse: () => events.first);
+      kind = 'event';
+    } else {
+      pick = hits.last;
+      kind = 'deadline';
+    }
   } else {
-    key = postedToKey(posted) ?? kToday;
+    final dues = hits.where((h) => h.deadline).toList();
+    pick = dues.isNotEmpty ? dues.last : hits.last;
+    kind = 'deadline';
   }
-  final tm = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(title);
-  final time = tm != null ? '${tm.group(1)!.padLeft(2, '0')}:${tm.group(2)}' : '23:59';
-  return (key: key, time: time);
+  final time = pick.time ?? (kind == 'event' ? '14:00' : '23:59');
+  return (key: pick.key, time: time, kind: kind);
 }
 
 String? postedToKey(String posted) {
@@ -270,9 +319,13 @@ String noticeViewUrl(String baseUrl, String articleNo) {
 String articleUrl(Opp o) {
   final raw = o.url.replaceAll('&amp;', '&');
   if (raw.contains('articleNo=')) return raw;
-  final m = RegExp(r'(?:feed-(?:school|dept)-)?(\d+)$').firstMatch(o.id);
+  final m = RegExp(r'(?:feed-(?:school|dept|college)-)?(\d+)$').firstMatch(o.id);
   if (m == null) return raw;
-  final base = o.g == 'dept' ? 'https://cse.skku.edu/cse/notice.do' : (o.g == 'school' ? 'https://www.skku.edu/skku/campus/skk_comm/notice01.do' : raw);
+  final base = o.g == 'dept'
+      ? 'https://cse.skku.edu/cse/notice.do'
+      : o.g == 'college'
+          ? 'https://sw.skku.edu/sw/notice.do'
+          : (o.g == 'school' ? 'https://www.skku.edu/skku/campus/skk_comm/notice01.do' : raw);
   if (!base.startsWith('http')) return raw;
   return noticeViewUrl(base, m.group(1)!);
 }
@@ -304,6 +357,8 @@ String noticeSrcName(String sourceId) {
       return '학교 홈페이지';
     case 'dept':
       return '학과 홈페이지';
+    case 'college':
+      return '소프트웨어융합대학';
     case 'icampus':
       return '아이캠퍼스';
     case 'etta':
@@ -326,6 +381,7 @@ Opp noticeToOpp(RawNotice n, String sourceId) {
     when.time,
     n.categoryRaw.isEmpty ? '학부 공지' : n.categoryRaw,
     noticeFields(n.title),
+    whenKind: when.kind,
   );
 }
 
@@ -348,7 +404,14 @@ SnapshotDoc parseSnapshot(String jsonText) {
     final posted = m['posted'] as String? ?? '';
     final catRaw = m['categoryRaw'] as String? ?? '';
     if (!keepUndergradNotice(title, catRaw)) continue;
-    final when = m['key'] is String ? (key: m['key'] as String, time: (m['t'] as String?) ?? '23:59') : noticeWhen(title, posted);
+    final computed = noticeWhen(title, posted);
+    final when = m['key'] is String
+        ? (
+            key: m['key'] as String,
+            time: (m['t'] as String?) ?? computed.time,
+            kind: (m['whenKind'] as String?) ?? 'deadline',
+          )
+        : computed;
     final rawId = m['id'] as String? ?? 'x';
     final id = rawId.contains('-') ? rawId : 'feed-$sourceId-$rawId';
     items.add(Opp(
@@ -362,6 +425,7 @@ SnapshotDoc parseSnapshot(String jsonText) {
       when.time,
       (m['meta'] as String?) ?? (catRaw.isEmpty ? '학부 공지' : catRaw),
       ((m['fields'] as List?) ?? noticeFields(title)).cast<String>(),
+      whenKind: when.kind,
     ));
   }
   return SnapshotDoc(sourceId: sourceId, loginRequired: map['loginRequired'] == true, opps: items);

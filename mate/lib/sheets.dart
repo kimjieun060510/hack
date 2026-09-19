@@ -134,7 +134,7 @@ Future<void> showShareSheet(BuildContext context, String oppId) {
       AppCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Txt(o.title, bold: true, size: 15),
-          Txt('${o.src} · ${shortDate(o.key)} 마감', size: 12, muted: true),
+          Txt('${o.src} · ${whenPhrase(o)}', size: 12, muted: true),
         ]),
       ),
       AppCard(

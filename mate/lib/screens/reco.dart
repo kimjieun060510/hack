@@ -6,8 +6,8 @@ import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
-/// 추천 탭: 학부생에게 필요한 소식을 모아 보여주고, 누르면 달력에 마감일이 들어가요.
-/// 소프트 학부 공지·취업·학부연구생·공모전과 학교 장학/비교과를 가져와요.
+/// 추천 탭: 학부생에게 필요한 소식을 모아 보여주고, 누르면 달력에 마감일·행사 당일이 들어가요.
+/// 소프트 학부·소프트웨어융합대학 공지와 학교 장학/비교과를 가져와요.
 
 const Map<String, String> _catStyle = {'schol': 'job', 'lab': 'class', 'vol': 'meet', 'club': 'dept', 'etc': 'opp'};
 
@@ -73,7 +73,7 @@ class RecoScreen extends LiveView {
           else if (list.isNotEmpty)
             const AiCard(ic: 'check', center: true, child: Txt('지금 나온 소식은 모두 달력에 추가했어요.')),
           Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            SectionHead(feat != null ? '이런 것도 있어요' : '추가한 소식', trailing: '+ 누르면 마감일이 달력에 들어가요'),
+            SectionHead(feat != null ? '이런 것도 있어요' : '추가한 소식', trailing: '+ 누르면 마감일·행사 당일이 달력에 들어가요'),
             const SizedBox(height: 10),
             ...gapped([for (final o in rest) _OppRow(o: o)], 10),
             if (list.isEmpty)
@@ -84,8 +84,6 @@ class RecoScreen extends LiveView {
     ]);
   }
 }
-
-String _time(Opp o) => o.t == '23:59' ? '자정' : o.t;
 
 class _FeatCard extends StatelessWidget {
   final Opp o;
@@ -118,7 +116,7 @@ class _FeatCard extends StatelessWidget {
               WidgetSpan(alignment: PlaceholderAlignment.middle, child: Icon(icon('ext'), size: 18, color: p.featMut)),
             ]), style: disp(22, p.featInk, height: 1.3)),
             const SizedBox(height: 10),
-            Text('${o.src} · ${kCats[o.cat]} · ${shortDate(o.key)} ${_time(o)} 마감${f != null ? ' · $f 관심사와 일치' : ''}', style: TextStyle(fontSize: 13, height: 1.5, color: p.featMut)),
+            Text('${o.src} · ${kCats[o.cat]} · ${whenPhrase(o)}${f != null ? ' · $f 관심사와 일치' : ''}', style: TextStyle(fontSize: 13, height: 1.5, color: p.featMut)),
           ]),
         ),
         const SizedBox(height: 12),
@@ -215,7 +213,7 @@ class _OppRow extends StatelessWidget {
               ]), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, height: 1.4, color: p.ink)),
               const SizedBox(height: 5),
               Text.rich(TextSpan(children: [
-                TextSpan(text: '${shortDate(o.key)} ${_time(o)} 마감 · ${o.meta}'),
+                TextSpan(text: '${whenPhrase(o)} · ${o.meta}'),
                 if (f != null) TextSpan(text: ' · $f 관심사', style: TextStyle(color: p.priText, fontWeight: FontWeight.w700)),
               ]), style: TextStyle(fontSize: 12, color: p.mut)),
             ]),

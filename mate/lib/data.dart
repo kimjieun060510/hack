@@ -41,19 +41,21 @@ const Map<String, String> kCats = {
 const List<String> kFields = ['개발·IT', '디자인', '경영·마케팅', '연구·실험', '공연·예술', '취업·진로'];
 
 /// 추천 소식. url 을 누르면 그 사이트가 열려요.
+/// [whenKind]: deadline(마감) · event(행사 당일) · posted(제목에 날짜 없음)
 class Opp {
   final String id, url, cat, g, src, title, key, t, meta;
   final List<String> fields;
-  const Opp(this.id, this.url, this.cat, this.g, this.src, this.title, this.key, this.t, this.meta, this.fields);
+  final String whenKind;
+  const Opp(this.id, this.url, this.cat, this.g, this.src, this.title, this.key, this.t, this.meta, this.fields, {this.whenKind = 'deadline'});
 }
 
 const List<Opp> kOpps = [
-  Opp('o1', 'https://cse.skku.edu/cse/notice.do', 'edu', 'dept', '학과 홈페이지', '신입생 진로탐색 특강', '9-25', '18:00', '선착순 40명', ['취업·진로']),
+  Opp('o1', 'https://cse.skku.edu/cse/notice.do', 'edu', 'dept', '학과 홈페이지', '신입생 진로탐색 특강', '9-25', '18:00', '선착순 40명', ['취업·진로'], whenKind: 'event'),
   Opp('o2', 'https://www.skku.edu/skku/campus/skk_comm/notice06.do', 'schol', 'school', '학교 홈페이지', '교내 장학금 신청 안내', '9-25', '17:00', '성적·소득 기준 확인', []),
   Opp('o3', 'https://ranbiz.skku.edu/?p=21', 'lab', 'school', '산학협력단', '산학협력 프로젝트 모집', '9-25', '23:59', '팀 또는 개인 지원', ['개발·IT', '연구·실험']),
   Opp('o4', 'https://cse.skku.edu/cse/notice.do', 'edu', 'dept', '소프트웨어학과', 'AI 아이디어톤 참가팀 모집', '9-27', '23:59', '팀 구성 필수', ['개발·IT']),
   Opp('o5', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'vol', 'school', '학교 홈페이지', '지역 아동센터 교육 봉사자 모집', '9-28', '17:00', '주 1회 · 교육 멘토링', []),
-  Opp('o7', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'edu', 'school', '학교 홈페이지', '인문학 특강 시리즈', '10-1', '23:59', '전 학년 · 오프라인 특강', []),
+  Opp('o7', 'https://www.skku.edu/skku/campus/skk_comm/notice01.do', 'edu', 'school', '학교 홈페이지', '인문학 특강 시리즈', '10-1', '14:00', '전 학년 · 오프라인 특강', [], whenKind: 'event'),
   Opp('o6', 'https://everytime.kr', 'club', 'etta', '에타', '해커톤 팀원 모집', '9-22', '23:59', '디자이너·기획자 환영', ['개발·IT', '디자인']),
 ];
 
@@ -193,12 +195,29 @@ class CustomType {
 
 // ---------------------------------------------------------------- 날짜·시간 도우미
 
-int dowOf(String key) {
+int monthOf(String key) => int.parse(key.split('-')[0]);
+
+int daysInMonth(int month) => DateTime.utc(2026, month + 1, 0).day;
+
+String dateKey(DateTime d) => '${d.month}-${d.day}';
+
+DateTime dateOf(String key) {
   final p = key.split('-');
-  return DateTime.utc(2026, int.parse(p[0]), int.parse(p[1])).weekday - 1; // 월=0 … 일=6
+  return DateTime.utc(2026, int.parse(p[0]), int.parse(p[1]));
+}
+
+int dowOf(String key) {
+  return dateOf(key).weekday - 1; // 월=0 … 일=6
 }
 
 int dayOf(String key) => int.parse(key.split('-')[1]);
+
+/// [key] 가 속한 주(월~일)의 날짜 키
+List<String> weekKeys(String key) {
+  final d = dateOf(key);
+  final monday = d.subtract(Duration(days: d.weekday - 1));
+  return [for (var i = 0; i < 7; i++) dateKey(monday.add(Duration(days: i)))];
+}
 
 int diffDays(String key) {
   final p = key.split('-');
@@ -215,6 +234,20 @@ String ddayText(String key) {
 String shortDate(String key) {
   final p = key.split('-');
   return '${p[0]}/${p[1]} (${kDayN[dowOf(key)]})';
+}
+
+/// 추천 카드·토스트에 쓰는 "9/30 18:00 행사" / "10/13 마감"
+String whenPhrase(Opp o) {
+  final showTime = o.t.isNotEmpty && o.t != '23:59';
+  final clock = showTime ? ' ${o.t}' : (o.whenKind == 'deadline' ? ' 자정' : '');
+  switch (o.whenKind) {
+    case 'event':
+      return '${shortDate(o.key)}$clock 행사';
+    case 'posted':
+      return '${shortDate(o.key)} 기준';
+    default:
+      return '${shortDate(o.key)}$clock 마감';
+  }
 }
 
 int toMin(String t) {

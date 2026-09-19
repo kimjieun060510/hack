@@ -61,10 +61,11 @@ python3 -m http.server 8080
 |---|---|---|
 | 학교 홈페이지 | 학부생 장학·비교과만. [전체 공지](https://www.skku.edu/skku/campus/skk_comm/notice01.do) + [장학](https://www.skku.edu/skku/campus/skk_comm/notice06.do). 대학원·조교는 빼요 | 그대로 두면 됩니다 |
 | 학과 홈페이지 | 소프트 **학부** 게시판 4개: [공지](https://cse.skku.edu/cse/notice.do) · [취업/인턴](https://cse.skku.edu/cse/notice_job.do) · [학부연구생](https://cse.skku.edu/cse/notice_recruit.do) · [공모전/대회](https://cse.skku.edu/cse/notice_senimar.do). 대학원 게시판은 읽지 않아요 | 그대로 두면 됩니다 |
+| 소프트웨어융합대학 | 단대 **학부** 공지: [공지사항](https://sw.skku.edu/sw/notice.do). 대학원 게시판은 읽지 않아요 | 그대로 두면 됩니다 |
 | 아이캠퍼스 | 킹고 SSO가 필요해서 **비밀번호를 받아 긁지 않아요**. `assets/feeds/icampus.json` 예시 시간표·과제 | 학교 LMS/SSO 허가가 나면 그 JSON만 API 응답으로 바꾸면 됩니다 |
 | 에브리타임 | 공식 공개 API가 없어서 게시판을 긁지 않아요. `assets/feeds/etta.json` 예시 글 | 공식 연동 또는 사용자가 동의한 내보내기 |
 
-폰(안드로이드·iOS)에서는 학교/학과 공지를 **바로** 가져옵니다. 크롬으로 보면 브라우저 CORS 때문에 홈페이지를 못 읽을 수 있어서, 그때는 저장해 둔 공지 스냅샷으로 보여 줍니다. 추천 화면의 새로고침 · 내 정보의 **지금 가져오기**로 다시 시도할 수 있어요.
+폰(안드로이드·iOS)에서는 학교/학과/단대 공지를 **바로** 가져옵니다. 추천에서 + 를 누르면 공지 제목의 마감일이나 행사 당일에 달력 일정이 들어갑니다. 크롬으로 보면 브라우저 CORS 때문에 홈페이지를 못 읽을 수 있어서, 그때는 저장해 둔 공지 스냅샷으로 보여 줍니다. 추천 화면의 새로고침 · 내 정보의 **지금 가져오기**로 다시 시도할 수 있어요.
 
 코드는 `mate/lib/feeds.dart` 입니다.
 
