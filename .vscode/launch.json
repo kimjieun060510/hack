@@ -5,7 +5,7 @@
       "name": "mate (Android)",
       "request": "launch",
       "type": "dart",
-      "cwd": "mate-flutter",
+      "cwd": "mate",
       "program": "lib/main.dart",
       "deviceId": "android"
     },
@@ -13,7 +13,7 @@
       "name": "mate (iOS)",
       "request": "launch",
       "type": "dart",
-      "cwd": "mate-flutter",
+      "cwd": "mate",
       "program": "lib/main.dart",
       "deviceId": "ios"
     },
@@ -21,7 +21,7 @@
       "name": "mate (Chrome)",
       "request": "launch",
       "type": "dart",
-      "cwd": "mate-flutter",
+      "cwd": "mate",
       "program": "lib/main.dart",
       "deviceId": "chrome"
     }

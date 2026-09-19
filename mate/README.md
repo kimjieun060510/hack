@@ -11,7 +11,7 @@
 먼저 [Flutter](https://docs.flutter.dev/get-started/install) 를 설치한 뒤, 터미널에서 이 폴더로 들어가요.
 
 ```bash
-cd mate-flutter
+cd mate
 flutter pub get
 ```
 

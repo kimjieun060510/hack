@@ -9,7 +9,7 @@
 터미널에 아래를 그대로 치면 돼요.
 
 ```bash
-cd mate-flutter
+cd mate
 flutter pub get
 ```
 
@@ -27,7 +27,7 @@ flutter run -d android
 flutter run -d chrome
 ```
 
-자세한 설명은 [`mate-flutter/README.md`](mate-flutter/README.md) 에 있어요. Flutter가 아직 없으면 [설치 가이드](https://docs.flutter.dev/get-started/install)를 먼저 따라가면 됩니다. 설치 확인은 `flutter doctor` 입니다.
+자세한 설명은 [`mate/README.md`](mate/README.md) 에 있어요. Flutter가 아직 없으면 [설치 가이드](https://docs.flutter.dev/get-started/install)를 먼저 따라가면 됩니다. 설치 확인은 `flutter doctor` 입니다.
 
 ## 브라우저에서 바로 보기 (HTML 프로토타입)
 
@@ -51,4 +51,4 @@ python3 -m http.server 8080
 
 - 화면에 나오는 이름, 일정, 공지는 모두 예시 데이터입니다. 실제 학교 시스템과 연동되어 있지 않습니다.
 - 웹 프로토타입은 `index.html` 한 파일에 들어 있습니다. 앱 이름은 `APP_NAME`, 추천 소식은 `OPPS`에서 바꿀 수 있습니다.
-- Flutter 앱 코드는 `mate-flutter/` 폴더에 있습니다.
+- Flutter 앱 코드는 `mate/` 폴더에 있습니다. (`pubspec.yaml` 의 이름과 같습니다.)
