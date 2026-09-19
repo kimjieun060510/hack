@@ -728,9 +728,8 @@ class TimeField extends StatelessWidget {
 class RoundIconBtn extends StatelessWidget {
   final String ic;
   final VoidCallback onTap;
-  final bool dot;
   final String label;
-  const RoundIconBtn({super.key, required this.ic, required this.onTap, required this.label, this.dot = false});
+  const RoundIconBtn({super.key, required this.ic, required this.onTap, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -747,30 +746,12 @@ class RoundIconBtn extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             customBorder: const CircleBorder(),
-            child: Stack(alignment: Alignment.center, children: [
-              Icon(icon(ic), size: 22, color: p.ink),
-              if (dot)
-                Positioned(
-                  top: 10,
-                  right: 11,
-                  child: Container(width: 9, height: 9, decoration: BoxDecoration(color: p.types['assign']!.c, shape: BoxShape.circle, border: Border.all(color: p.surface, width: 2))),
-                ),
-            ]),
+            child: Icon(icon(ic), size: 22, color: p.ink),
           ),
         ),
       ),
     );
   }
-}
-
-class BellBtn extends StatelessWidget {
-  const BellBtn({super.key});
-
-  @override
-  Widget build(BuildContext context) => ListenableBuilder(
-        listenable: app,
-        builder: (c, _) => RoundIconBtn(ic: 'bell', label: app.unread > 0 ? '알림 ${app.unread}개' : '알림', dot: app.unread > 0, onTap: () => showNotifSheet(context)),
-      );
 }
 
 class MeBtn extends StatelessWidget {

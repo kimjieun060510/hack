@@ -21,15 +21,9 @@ class HomeScreen extends LiveView {
       child: SafeArea(
         bottom: false,
         child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 10, 16, 4),
-            child: Row(children: [
-              const MateLogo(size: 34),
-              const Spacer(),
-              const BellBtn(),
-              const SizedBox(width: 8),
-              const MeBtn(),
-            ]),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(22, 10, 16, 4),
+            child: Align(alignment: Alignment.centerLeft, child: MateLogo(size: 34)),
           ),
           Expanded(
             child: Body(padding: EdgeInsets.fromLTRB(16, 6, 16, 24 + MediaQuery.paddingOf(context).bottom), children: [

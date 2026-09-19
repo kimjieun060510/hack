@@ -182,36 +182,6 @@ Future<void> showReqSheet(BuildContext context) {
   });
 }
 
-// ------------------------------------------------------------------ 알림
-
-Future<void> showNotifSheet(BuildContext context) {
-  app.readNotifs();
-  return _openSheet<void>(context, (ctx) {
-    final p = pal(ctx);
-    return SheetFrame(title: '알림', children: [
-      AppCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Column(children: [
-          for (var i = 0; i < app.notifs.length; i++)
-            InkWell(
-              onTap: () {
-                Navigator.of(ctx).pop();
-                app.notifGo(app.notifs[i].go);
-              },
-              child: PersonRow(
-                first: i == 0,
-                avatar: IconDisc(app.notifs[i].ic, bg: p.priSoft, fg: p.pri),
-                name: app.notifs[i].t,
-                sub: app.notifs[i].s,
-                trailing: Icon(icon('chev'), color: p.mut),
-              ),
-            ),
-        ]),
-      ),
-    ]);
-  });
-}
-
 // ------------------------------------------------------------------ 밥약 찾기 · 랜덤 매칭 상세
 
 Future<void> showMealDetailSheet(BuildContext context, RandMeal q) {

@@ -7,11 +7,6 @@ import 'data.dart';
 /// 앱의 모든 상태와 "버튼을 눌렀을 때 일어나는 일"이 들어 있는 파일이에요.
 /// 화면(screens/*.dart)은 여기 있는 app 을 읽고, 버튼에서 app.○○() 를 불러요.
 
-class Notif {
-  final String id, ic, t, s, go;
-  Notif(this.id, this.ic, this.t, this.s, this.go);
-}
-
 class BannerData {
   final String t, ic, k, title, body, cta, go;
   const BannerData({required this.t, required this.ic, required this.k, required this.title, required this.body, this.cta = '', this.go = ''});
@@ -78,7 +73,6 @@ class AppState extends ChangeNotifier {
   bool push = false;
   BannerData? banner;
   String toastMsg = '';
-  int unread = 2;
 
   // 내 정보
   String userName = '혜인';
@@ -90,7 +84,6 @@ class AppState extends ChangeNotifier {
   late List<Ev> events;
   late Map<String, bool> cats, fields, conn;
   late List<CustomType> customTypes;
-  late List<Notif> notifs;
   late List<MeetPost> meetPosts;
   late MealState meal;
   late MeetState meet;
@@ -139,7 +132,6 @@ class AppState extends ChangeNotifier {
     push = false;
     banner = null;
     toastMsg = '';
-    unread = 2;
     gender = 'male';
     autoLogin = false;
     showPw = false;
@@ -148,10 +140,6 @@ class AppState extends ChangeNotifier {
     fields = {'개발·IT': true, '경영·마케팅': true};
     conn = {'icampus': true, 'dept': true, 'etta': true};
     customTypes = [];
-    notifs = [
-      Notif('n1', 'sparkle', '새 기회 2개가 도착했어요', '관심 분야에 맞는 공고예요', 'reco'),
-      Notif('n2', 'utensils', '익명의 새내기가 밥약을 보냈어요', '12:30 같이 밥 먹을래요?', 'push'),
-    ];
     meetPosts = List.of(kMeetSeed);
     meal = MealState();
     meet = MeetState();
@@ -412,11 +400,6 @@ class AppState extends ChangeNotifier {
       _n();
     });
     _n();
-  }
-
-  void _notify(String ic, String t, String s, String go) {
-    notifs.insert(0, Notif('n${_uid++}', ic, t, s, go));
-    unread++;
   }
 
   void addEvent(Ev e) => events.add(e);
@@ -917,7 +900,6 @@ class AppState extends ChangeNotifier {
         cta: '약속 확인',
         go: 'plans',
       ));
-      _notify('utensils', '밥약 매칭이 성사됐어요', '${meal.mates.length}명이 같이 먹기로 했어요', 'plans');
       _n();
     });
     _n();
@@ -1043,7 +1025,6 @@ class AppState extends ChangeNotifier {
       mine: true,
     ));
     showBanner(BannerData(t: 'meet', ic: 'heart', k: '과팅 매칭', title: '상대 팀과 이어졌어요', body: '$when · ${post.place} · ${post.size.replaceAll(':', ' : ')}', cta: '내 약속 보기', go: 'plans'));
-    _notify('heart', '과팅 매칭이 성사됐어요', '$when · ${post.place}', 'plans');
     _n();
   }
 
@@ -1150,20 +1131,6 @@ class AppState extends ChangeNotifier {
   void bannerGo(String g) {
     banner = null;
     open(g);
-  }
-
-  void notifGo(String g) {
-    if (g == 'push') {
-      push = true;
-      _n();
-    } else {
-      open(g);
-    }
-  }
-
-  void readNotifs() {
-    unread = 0;
-    _n();
   }
 
   /// 화면 뒤에서 바뀐 값을 화면에 알려줘요 (시트 안에서 쓰는 도우미)
