@@ -31,7 +31,7 @@ class CalendarScreen extends LiveView {
         child: BackHeader(
           '',
           titleWidget: Text.rich(TextSpan(children: [
-            TextSpan(text: '9월', style: disp(34, p.ink, height: 1.1)),
+            TextSpan(text: '${monthOf(key)}월', style: disp(34, p.ink, height: 1.1)),
             TextSpan(text: ' 2026', style: TextStyle(fontSize: 13, color: p.mut)),
           ])),
         ),
@@ -104,12 +104,15 @@ class _Grid extends LiveView {
     final cellH = week ? 136.0 : 80.0;
     final rows = <List<Widget>>[];
     if (week) {
-      rows.add([for (final d in kWeek) _DayCell(dayKey: '9-$d', max: 4, tall: true)]);
+      rows.add([for (final k in weekKeys(app.sel)) _DayCell(dayKey: k, max: 4, tall: true)]);
     } else {
-      final lead = dowOf('9-1');
+      final month = monthOf(app.sel);
+      final lead = dowOf('$month-1');
+      final nDays = daysInMonth(month);
+      final prevDays = DateTime.utc(2026, month, 0).day;
       final cells = <Widget>[
-        for (var i = 0; i < lead; i++) _DimCell(n: 31 - lead + 1 + i),
-        for (var d = 1; d <= 30; d++) _DayCell(dayKey: '9-$d', max: 2, tall: false),
+        for (var i = 0; i < lead; i++) _DimCell(n: prevDays - lead + 1 + i),
+        for (var d = 1; d <= nDays; d++) _DayCell(dayKey: '$month-$d', max: 2, tall: false),
       ];
       final tail = (7 - cells.length % 7) % 7;
       for (var i = 1; i <= tail; i++) {

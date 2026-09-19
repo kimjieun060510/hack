@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'data.dart';
+import 'feeds.dart';
 
 /// 앱의 모든 상태와 "버튼을 눌렀을 때 일어나는 일"이 들어 있는 파일이에요.
 /// 화면(screens/*.dart)은 여기 있는 app 을 읽고, 버튼에서 app.○○() 를 불러요.
@@ -57,6 +58,9 @@ class AppState extends ChangeNotifier {
 
   int _uid = 100;
   Timer? _toastT, _bannerT, _searchT;
+  final FeedClient feeds = FeedClient();
+  int _syncGen = 0;
+  bool _syncedOnce = false;
 
   // ---- 화면 상태
   /// 지금 보이는 화면: login | verify | interest | home | cal | reco | meal | meet | play | plans | me
@@ -82,7 +86,10 @@ class AppState extends ChangeNotifier {
   bool autoLogin = false, showPw = false;
 
   late List<Ev> events;
+  late List<Opp> opps;
   late Map<String, bool> cats, fields, conn;
+  final Map<String, String> feedStatus = {};
+  bool syncing = false;
   late List<CustomType> customTypes;
   late List<MeetPost> meetPosts;
   late MealState meal;
@@ -94,8 +101,12 @@ class AppState extends ChangeNotifier {
   // 함께 신청
   String shareOpp = 'o1';
   late Map<int, bool> shareTo;
-  late Map<int, bool> reqTo; // 밥약 신청 받을 친구 (kFriends 번호)
+  final Set<int> reqPicked = {}; // 밥약 신청을 보낼 맞팔 친구 (kFriends 번호)
   bool reqAnon = true;
+
+  // 팔로우: 밥약 · 놀기는 서로 팔로우한(맞팔) 사람끼리만, 과팅은 가입한 모두가 대상
+  final Set<int> following = {}; // 내가 팔로우한 사람 (kFriends 번호)
+  final followSearchC = TextEditingController(); // 이름 · 학번 검색
 
   // 일정 추가
   String addType = 'job';
@@ -136,9 +147,16 @@ class AppState extends ChangeNotifier {
     autoLogin = false;
     showPw = false;
     events = _initialEvents();
-    cats = {'edu': true, 'schol': true, 'lab': true, 'vol': true, 'club': true};
+    cats = {'edu': true, 'schol': true, 'lab': true, 'vol': true, 'club': true, 'etc': true};
     fields = {'개발·IT': true, '경영·마케팅': true};
-    conn = {'icampus': true, 'dept': true, 'etta': true};
+    conn = {'icampus': true, 'school': true, 'dept': true, 'college': true, 'etta': true};
+    opps = List.of(kOpps);
+    feedStatus
+      ..clear()
+      ..addEntries(kFeedSources.map((s) => MapEntry(s.id, s.needsLogin ? '로그인 연동 전 · 예시 데이터' : '아직 가져오지 않았어요')));
+    syncing = false;
+    _syncedOnce = false;
+    _syncGen++;
     customTypes = [];
     meetPosts = [for (final p in kMeetSeed) MeetPost(p.id, p.key, p.time, p.place, p.size, List.of(p.m), List.of(p.f), mine: p.mine, note: p.note)];
     meal = MealState();
@@ -146,8 +164,12 @@ class AppState extends ChangeNotifier {
     play = PlayState();
     mealReqState.clear();
     meetApplied.clear();
-    reqTo = {0: true, 1: false, 2: false};
+    reqPicked.clear();
     reqAnon = true;
+    following
+      ..clear()
+      ..addAll(kFollowingSeed);
+    followSearchC.clear();
     shareOpp = 'o1';
     shareTo = {0: true, 1: true, 2: false};
     addType = 'job';
@@ -186,7 +208,7 @@ class AppState extends ChangeNotifier {
         end: '',
         type: 'opp',
         title: o.title,
-        sub: '기회 추천에서 추가 · ${o.src}',
+        sub: o.whenKind == 'event' ? '기회 추천에서 추가 · ${o.src} · 행사' : '기회 추천에서 추가 · ${o.src}',
         cat: o.cat,
         g: o.g,
         oppId: o.id,
@@ -273,8 +295,7 @@ class AppState extends ChangeNotifier {
     if (e.src == 'icampus' && conn['icampus'] != true) return false;
     if (e.type == 'opp') {
       if (cats[e.cat] != true) return false;
-      if (e.g == 'etta' && conn['etta'] != true) return false;
-      if (e.g == 'dept' && conn['dept'] != true) return false;
+      if (conn[e.g] == false) return false;
     }
     return true;
   }
@@ -309,9 +330,8 @@ class AppState extends ChangeNotifier {
 
   String aiText(String key) {
     final l = loadOf(key);
-    final p = key.split('-');
-    final prev = '${p[0]}-${int.parse(p[1]) - 1}';
-    final pl = loadOf(prev);
+    final d = dateOf(key).subtract(const Duration(days: 1));
+    final pl = loadOf('${d.month}-${d.day}');
     if (l.n == 0) return '비어있는 하루예요. 밥약이나 산책으로 기분 전환 어때요?';
     if (l.assigns >= 3) return '마감이 ${l.assigns}개예요. 충분히 자고, 영양가 있는 저녁을 챙겨요.';
     if (l.jobH >= 6) return '알바가 ${fmtH(l.jobH)}시간이에요. 내일은 쉬어가는 날로 비워두는 게 좋겠어요.';
@@ -337,7 +357,66 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  List<Opp> recoList() => kOpps.where((o) => cats[o.cat] == true && (o.g != 'etta' || conn['etta'] == true) && (o.g != 'dept' || conn['dept'] == true)).toList();
+  List<Opp> recoList() => opps.where((o) => cats[o.cat] == true && conn[o.g] != false).toList();
+
+  Opp? findOpp(String id) {
+    for (final o in opps) {
+      if (o.id == id) return o;
+    }
+    for (final o in kOpps) {
+      if (o.id == id) return o;
+    }
+    return null;
+  }
+
+  /// 켜 둔 곳에서 소식을 모아요. 학교·학과는 공개 홈페이지, 나머지는 연동 전 예시.
+  Future<void> syncFeeds({String? only}) async {
+    final gen = ++_syncGen;
+    syncing = true;
+    _n();
+    final targets = kFeedSources.where((s) => (only == null || s.id == only) && conn[s.id] == true).toList();
+    var net = 0, snap = 0;
+    for (final def in targets) {
+      try {
+        final bundle = await feeds.load(def);
+        if (gen != _syncGen) return;
+        if (def.id != 'icampus') _replaceOpps(def.id, bundle.opps);
+        feedStatus[def.id] = bundle.status;
+        if (bundle.fromNetwork) {
+          net += bundle.opps.length;
+        } else {
+          snap += bundle.opps.length;
+        }
+      } catch (_) {
+        if (gen != _syncGen) return;
+        feedStatus[def.id] = '가져오지 못했어요. 잠시 뒤 다시 눌러 주세요';
+      }
+    }
+    if (gen != _syncGen) return;
+    syncing = false;
+    _n();
+    if (only != null) {
+      showToast(feedStatus[only] ?? '가져왔어요');
+    } else if (net > 0) {
+      showToast('공개 공지 $net건을 홈페이지에서 가져왔어요');
+    } else if (snap > 0) {
+      showToast('지금은 저장해 둔 공지로 보여요 (웹은 CORS, 폰에서는 바로 가져와요)');
+    }
+  }
+
+  void _replaceOpps(String sourceId, List<Opp> next) {
+    opps.removeWhere((o) => o.g == sourceId);
+    opps.addAll(next);
+  }
+
+  String feedLine() {
+    final parts = <String>[];
+    for (final s in kFeedSources) {
+      if (conn[s.id] != true) continue;
+      parts.add(s.name);
+    }
+    return parts.isEmpty ? '가져온 곳을 켜 주세요' : '${parts.join(' · ')}에서 소식을 모아요.';
+  }
 
   // 밥약 도우미
   String mealAt() => (meal.date == kToday ? '' : '${shortDate(meal.date)} ') + meal.time;
@@ -458,7 +537,14 @@ class AppState extends ChangeNotifier {
       _hist.add(screen);
       screen = s;
     }
+    if (screen == 'reco' || screen == 'me' || screen == 'cal') _kickSync();
     _n();
+  }
+
+  void _kickSync() {
+    if (_syncedOnce || syncing) return;
+    _syncedOnce = true;
+    syncFeeds();
   }
 
   bool _isSocial(String x) => x == 'meal' || x == 'meet' || x == 'play';
@@ -467,6 +553,7 @@ class AppState extends ChangeNotifier {
   void switchTab(String s) {
     _clearOverlays();
     screen = s;
+    if (s == 'reco' || s == 'cal') _kickSync();
     _n();
   }
 
@@ -584,6 +671,7 @@ class AppState extends ChangeNotifier {
     _hist.clear();
     screen = 'home';
     _n();
+    _kickSync();
   }
 
   void _resetSignup() {
@@ -657,6 +745,7 @@ class AppState extends ChangeNotifier {
     _hist.clear();
     screen = 'home';
     showToast('가입이 끝났어요! 메인화면에서 시작해요');
+    _kickSync();
   }
 
   /// 관심사 고르기 끝. 원래 가려던 화면(달력 · 추천)으로 가요.
@@ -666,6 +755,7 @@ class AppState extends ChangeNotifier {
     _pending = null;
     screen = to;
     showToast('끝났어요! 이제 앱이 알아서 소식을 모아요');
+    _kickSync();
   }
 
   /// 관심사는 나중에 (내 정보에서 다시 고를 수 있어요)
@@ -674,6 +764,7 @@ class AppState extends ChangeNotifier {
     final to = _pending ?? 'cal';
     _pending = null;
     screen = to;
+    _kickSync();
     _n();
   }
 
@@ -690,13 +781,13 @@ class AppState extends ChangeNotifier {
   void toggleConn(String k) {
     conn[k] = !(conn[k] ?? false);
     _n();
+    if (conn[k] == true) syncFeeds(only: k);
   }
 
   // ------------------------------------------------------------ 달력
 
   void setView(String v) {
     calView = v;
-    if (v == 'week' && !kWeek.map((d) => '9-$d').contains(sel)) sel = kToday;
     _n();
   }
 
@@ -716,14 +807,17 @@ class AppState extends ChangeNotifier {
   }
 
   void toggleOpp(String id) {
-    final o = kOpps.firstWhere((x) => x.id == id);
+    final o = findOpp(id);
+    if (o == null) return;
     if (isAdded(id)) {
       events.removeWhere((e) => e.id == 'opp-$id');
       showToast('달력에서 뺐어요');
     } else {
       events.add(oppEvent(o));
-      if (o.key.startsWith('9-')) sel = o.key;
-      showToast('${shortDate(o.key)} 마감일을 달력에 추가했어요');
+      sel = o.key;
+      if (calView == 'week' && !weekKeys(kToday).contains(o.key)) calView = 'month';
+      final label = o.whenKind == 'event' ? '행사 당일' : (o.whenKind == 'posted' ? '날짜' : '마감일');
+      showToast('${shortDate(o.key)} ${label}을 달력에 추가했어요');
     }
   }
 
@@ -807,6 +901,57 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
+  // ------------------------------------------------------------ 팔로우
+
+  /// 내가 팔로우한 사람들 (kFriends 번호 순서대로)
+  List<int> followingList() => following.toList()..sort();
+
+  /// 검색어 (앞뒤 공백 · 학번 사이의 공백/하이픈은 무시)
+  String get followQuery => followSearchC.text.trim();
+
+  /// 이름이나 학번으로 가입한 학생 찾기 (검색어가 없으면 빈 목록)
+  List<int> followSearch() {
+    final q = followQuery.toLowerCase();
+    if (q.isEmpty) return const [];
+    final digits = q.replaceAll(RegExp(r'[\s-]'), '');
+    return [
+      for (var i = 0; i < kFriends.length; i++)
+        if (kFriends[i].n.toLowerCase().contains(q) || (RegExp(r'^\d+$').hasMatch(digits) && kFriends[i].no.contains(digits))) i,
+    ];
+  }
+
+  void followSearchChanged() => _n();
+
+  void followSearchClear() {
+    followSearchC.clear();
+    _n();
+  }
+
+  /// 서로 팔로우한(맞팔) 사이인지. 밥약 · 놀기는 이런 사람끼리만 이어져요.
+  bool isMutual(int i) => following.contains(i) && kFriends[i].followsMe;
+
+  /// 맞팔한 사람들 (kFriends 번호 순서대로)
+  List<int> mutuals() => [for (var i = 0; i < kFriends.length; i++) if (isMutual(i)) i];
+
+  /// 팔로우 · 팔로우 취소
+  void toggleFollow(int i) {
+    if (following.remove(i)) {
+      // 맞팔이 풀리면 밥약·놀기·신청 대상에서도 빠져요
+      meal.picked.remove(i);
+      play.picked.remove(i);
+      reqPicked.remove(i);
+      meet.members.remove(i);
+      shareTo.remove(i);
+      showToast('${kFriends[i].n} 님 팔로우를 취소했어요');
+    } else {
+      following.add(i);
+      showToast(kFriends[i].followsMe
+          ? '${kFriends[i].n} 님과 맞팔이 됐어요. 이제 밥약 · 놀기를 함께할 수 있어요'
+          : '${kFriends[i].n} 님을 팔로우했어요. 상대도 팔로우하면 맞팔이 돼요');
+    }
+    _n();
+  }
+
   // ------------------------------------------------------------ 밥약
 
   /// 밥약 보내기: 날짜 · 시간 고르기
@@ -828,6 +973,7 @@ class AppState extends ChangeNotifier {
   }
 
   void mealTogglePick(int i) {
+    if (!isMutual(i)) return;
     if (!meal.picked.add(i)) meal.picked.remove(i);
     _n();
   }
@@ -845,8 +991,14 @@ class AppState extends ChangeNotifier {
   void mealSubmit() {
     final m = meal;
     if (m.step != 'form') return;
-    if (!m.random && m.who == 'pick' && m.picked.isEmpty) {
-      showToast('밥약을 보낼 친구를 골라주세요');
+    final mutual = mutuals();
+    final pickMode = !m.random && m.who == 'pick';
+    if (pickMode && !m.picked.any(isMutual)) {
+      showToast(mutual.isEmpty ? '맞팔한 친구가 아직 없어요. 내 정보에서 팔로우해 보세요' : '밥약을 보낼 맞팔 친구를 골라주세요');
+      return;
+    }
+    if (mutual.isEmpty && (m.random || m.who == 'all')) {
+      showToast('맞팔한 친구가 아직 없어요. 내 정보에서 팔로우해 보세요');
       return;
     }
     m.msg = mealMsgC.text.trim();
@@ -861,9 +1013,20 @@ class AppState extends ChangeNotifier {
     _searchT?.cancel();
     _searchT = Timer(const Duration(milliseconds: 1500), () {
       if (meal.step != 'searching') return;
+      // 맞팔한 사람만 매칭돼요. 랜덤 파티는 맞팔한 사람 중에서 최대 2명을 무작위로 골라요.
+      final ok = mutuals();
+      final chosen = meal.random
+          ? (ok.toList()..shuffle()).take(2).toList()
+          : (meal.who == 'pick' ? meal.picked.where(isMutual).toList() : ok);
       meal.mates
         ..clear()
-        ..addAll(!meal.random && meal.who == 'pick' ? (meal.picked.toList()..sort()) : List.generate(kFriends.length, (i) => i));
+        ..addAll(chosen..sort());
+      if (meal.mates.isEmpty) {
+        meal.step = 'form';
+        showToast('맞팔한 친구가 없어서 매칭하지 못했어요');
+        _n();
+        return;
+      }
       meal.step = 'matched';
       final names = meal.mates.map((i) => kFriends[i].n).join(', ');
       showBanner(BannerData(
@@ -921,32 +1084,28 @@ class AppState extends ChangeNotifier {
     showToast('같이 먹기를 신청했어요. 수락되면 배너로 알려드려요');
   }
 
-  void openReq() {
-    reqTo = {for (var i = 0; i < kFriends.length; i++) i: i == 0};
+  void reqTogglePick(int i) {
+    if (!isMutual(i)) return;
+    if (!reqPicked.add(i)) reqPicked.remove(i);
     _n();
   }
-
-  void toggleReqTo(int i) {
-    reqTo[i] = !(reqTo[i] ?? false);
-    _n();
-  }
-
-  int reqCount() => reqTo.values.where((v) => v).length;
-
-  List<String> reqNames() => [for (var i = 0; i < kFriends.length; i++) if (reqTo[i] == true) kFriends[i].n];
 
   void reqToggleAnon() {
     reqAnon = !reqAnon;
     _n();
   }
 
-  void reqSend() {
-    final names = reqNames();
-    if (names.isEmpty) {
-      showToast('밥약을 보낼 친구를 골라주세요');
-      return;
+  /// 밥약 신청하기 (맞팔 친구에게만). 성공하면 true.
+  bool reqSend() {
+    final to = reqPicked.where(isMutual).toList()..sort();
+    if (to.isEmpty) {
+      showToast(mutuals().isEmpty ? '맞팔한 친구가 아직 없어요. 내 정보에서 팔로우해 보세요' : '신청을 보낼 맞팔 친구를 골라주세요');
+      return false;
     }
-    showToast('${names.join(', ')}에게 밥약 신청을 보냈어요. 답장이 오면 배너로 알려드려요');
+    final names = to.map((i) => kFriends[i].n).join(', ');
+    reqPicked.clear();
+    showToast('$names에게 밥약 신청을 보냈어요. 답장이 오면 배너로 알려드려요');
+    return true;
   }
 
   // ------------------------------------------------------------ 과팅
@@ -1063,11 +1222,15 @@ class AppState extends ChangeNotifier {
   }
 
   void playTogglePick(int i) {
+    if (!isMutual(i)) return;
     if (!play.picked.add(i)) play.picked.remove(i);
     _n();
   }
 
   bool playJoined(String id) => events.any((e) => e.id == 'play-$id');
+
+  /// 받은 놀기 신청 중 맞팔한 사람이 올린 것만 (글쓴이 기준)
+  List<PlayPost> playInbox() => kPlays.where((x) => isMutual(x.by.first) && !playJoined(x.id)).toList();
 
   /// 받은 놀기 신청에 참여
   void playJoin(String id) {
@@ -1079,8 +1242,19 @@ class AppState extends ChangeNotifier {
 
   /// 놀 친구 구하기
   void playSubmit() {
+    final mutual = mutuals();
+    if (play.who == 'pick' && !play.picked.any(isMutual)) {
+      showToast(mutual.isEmpty ? '맞팔한 친구가 아직 없어요. 내 정보에서 팔로우해 보세요' : '같이 놀 맞팔 친구를 골라주세요');
+      return;
+    }
+    if (play.who == 'all' && mutual.isEmpty) {
+      showToast('맞팔한 친구가 아직 없어요. 내 정보에서 팔로우해 보세요');
+      return;
+    }
     final place = playPlaceC.text.trim();
     final act = kActs.firstWhere((a) => a.$1 == play.act);
+    final to = play.who == 'pick' ? play.picked.where(isMutual).length : (play.who == 'all' ? mutual.length : 0);
+    final toText = to == 0 ? '' : ' · 맞팔 친구 $to명에게 보냈어요';
     events.add(Ev(
       id: 'e${_uid++}',
       key: play.date,
@@ -1088,7 +1262,7 @@ class AppState extends ChangeNotifier {
       end: fromMin(toMin(play.time) + 120),
       type: 'meet',
       title: '${act.$2} 같이 가요',
-      sub: place.isEmpty ? '놀기 · 내가 올린 모임' : '놀기 · 내가 올린 모임 · $place',
+      sub: '${place.isEmpty ? '놀기 · 내가 올린 모임' : '놀기 · 내가 올린 모임 · $place'}$toText',
       mine: true,
     ));
     play.view = 'done';
@@ -1117,7 +1291,7 @@ class AppState extends ChangeNotifier {
     push = false;
     sel = kToday;
     if (!events.any((e) => e.id == 'push-meal')) {
-      events.add(Ev(id: 'push-meal', key: kToday, t: '12:30', end: '13:00', type: 'meet', title: '밥약', sub: '익명의 새내기와', mine: true));
+      events.add(Ev(id: 'push-meal', key: kToday, t: '12:30', end: '13:00', type: 'meet', title: '밥약', sub: '익명의 맞팔 친구와', mine: true));
     }
     open('cal');
     showBanner(const BannerData(t: 'job', ic: 'utensils', k: '밥약 확정', title: '12:30 밥약이 달력에 들어갔어요', body: '수락하면 서로 이름이 공개돼요'));

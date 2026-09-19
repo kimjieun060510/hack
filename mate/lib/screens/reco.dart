@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../data.dart';
-import '../sheets.dart';
+import '../feeds.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
-/// 추천 탭: 관심사에 맞는 소식을 모아 보여주고, 누르면 달력에 마감일이 들어가요.
-/// 제목이나 카드를 누르면 원문 사이트가 열려요 (주소는 data.dart 의 kOpps).
+/// 추천 탭: 학부생에게 필요한 소식을 모아 보여주고, 누르면 달력에 마감일·행사 당일이 들어가요.
+/// 소프트 학부·소프트웨어융합대학 공지와 학교 장학/비교과를 가져와요.
 
-const Map<String, String> _catStyle = {'schol': 'job', 'lab': 'class', 'vol': 'meet', 'club': 'dept'};
+const Map<String, String> _catStyle = {'schol': 'job', 'lab': 'class', 'vol': 'meet', 'club': 'dept', 'etc': 'opp'};
 
 class RecoScreen extends LiveView {
   const RecoScreen({super.key});
@@ -17,14 +17,37 @@ class RecoScreen extends LiveView {
   @override
   Widget body(BuildContext context) {
     final list = app.recoList();
-    final srcs = ['아이캠퍼스', if (app.conn['dept'] == true) '학과 홈페이지', if (app.conn['etta'] == true) '에타'].join(' · ');
+    final srcs = app.feedLine();
     final allAdded = list.isNotEmpty && list.every((o) => app.isAdded(o.id));
 
     return Column(children: [
-      SafeArea(bottom: false, child: BackHeader('', titleWidget: Text('추천', style: disp(32, pal(context).ink, height: 1.2)))),
+      SafeArea(
+        bottom: false,
+        child: BackHeader(
+          '',
+          titleWidget: Text('추천', style: disp(32, pal(context).ink, height: 1.2)),
+          actions: [
+            Semantics(
+              button: true,
+              label: '소식 새로고침',
+              child: InkWell(
+                onTap: app.syncing ? null : () => app.syncFeeds(),
+                customBorder: const CircleBorder(),
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: app.syncing
+                      ? Padding(padding: const EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2.5, color: pal(context).pri))
+                      : Icon(icon('refresh'), color: pal(context).ink),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       Expanded(
         child: Body(children: [
-          Txt('$srcs에서 내 관심사에 맞는 소식만 모았어요.', size: 13, muted: true),
+          Txt(srcs, size: 13, muted: true),
           Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const SectionHead('달력에 띄울 분야', trailing: '눌러서 켜고 끄기'),
             const SizedBox(height: 10),
@@ -40,7 +63,7 @@ class RecoScreen extends LiveView {
           ]),
           if (allAdded) const AiCard(ic: 'check', center: true, child: Txt('지금 나온 소식은 모두 달력에 추가했어요.')),
           Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const SectionHead('둘러보세요', trailing: '+ 누르면 마감일이 달력에 들어가요'),
+            const SectionHead('둘러보세요', trailing: '+ 누르면 마감일·행사 당일이 달력에 들어가요'),
             const SizedBox(height: 10),
             ...gapped([for (final o in list) _OppRow(o: o)], 10),
             if (list.isEmpty)
@@ -51,8 +74,6 @@ class RecoScreen extends LiveView {
     ]);
   }
 }
-
-String _time(Opp o) => o.t == '23:59' ? '자정' : o.t;
 
 class _RoundBtn extends StatelessWidget {
   final String ic, kind; // kind: line | pri | on
@@ -98,11 +119,11 @@ class _OppRow extends StatelessWidget {
       child: Row(children: [
         Expanded(
           child: InkWell(
-            onTap: () => openUrl(o.url),
+            onTap: () => openUrl(articleUrl(o)),
             borderRadius: BorderRadius.circular(10),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Wrap(spacing: 6, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                Pill(kCats[o.cat] ?? '', style: ts),
+                Pill(kCats[o.cat] ?? '기타', style: ts),
                 Text(o.src, style: TextStyle(fontSize: 12, color: p.mut)),
                 Text(ddayText(o.key), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: p.types['assign']!.ink)),
               ]),
@@ -114,7 +135,7 @@ class _OppRow extends StatelessWidget {
               ]), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, height: 1.4, color: p.ink)),
               const SizedBox(height: 5),
               Text.rich(TextSpan(children: [
-                TextSpan(text: '${shortDate(o.key)} ${_time(o)} 마감 · ${o.meta}'),
+                TextSpan(text: '${whenPhrase(o)} · ${o.meta}'),
                 if (f != null) TextSpan(text: ' · $f 관심사', style: TextStyle(color: p.priText, fontWeight: FontWeight.w700)),
               ]), style: TextStyle(fontSize: 12, color: p.mut)),
             ]),
@@ -122,7 +143,7 @@ class _OppRow extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Column(mainAxisSize: MainAxisSize.min, children: [
-          _RoundBtn(size: 48, ic: 'share', kind: 'line', label: '${o.title} 친구와 함께 신청', onTap: () => showShareSheet(context, o.id)),
+          _RoundBtn(size: 48, ic: 'share', kind: 'line', label: '${o.title} 공지 원문 열기', onTap: () => openUrl(articleUrl(o))),
           const SizedBox(height: 6),
           _RoundBtn(size: 60, ic: on ? 'check' : 'plus', kind: on ? 'on' : 'pri', label: '${on ? '달력에서 빼기' : '달력에 추가'}: ${o.title}', onTap: () => app.toggleOpp(o.id)),
         ]),

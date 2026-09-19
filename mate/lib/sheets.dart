@@ -128,13 +128,13 @@ class _AddSheetState extends State<_AddSheet> {
 Future<void> showShareSheet(BuildContext context, String oppId) {
   app.openShare(oppId);
   return _openSheet<void>(context, (ctx) {
-    final o = kOpps.firstWhere((x) => x.id == app.shareOpp, orElse: () => kOpps.first);
+    final o = app.findOpp(app.shareOpp) ?? (app.opps.isNotEmpty ? app.opps.first : kOpps.first);
     final n = app.shareCount();
     return SheetFrame(title: '친구와 함께 신청', children: [
       AppCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Txt(o.title, bold: true, size: 15),
-          Txt('${o.src} · ${shortDate(o.key)} 마감', size: 12, muted: true),
+          Txt('${o.src} · ${whenPhrase(o)}', size: 12, muted: true),
         ]),
       ),
       AppCard(
@@ -163,35 +163,31 @@ Future<void> showShareSheet(BuildContext context, String oppId) {
 // ------------------------------------------------------------------ 밥약 신청하기
 
 Future<void> showReqSheet(BuildContext context) {
-  app.openReq();
   return _openSheet<void>(context, (ctx) {
-    final n = app.reqCount();
+    final mutual = app.mutuals();
     return SheetFrame(title: '밥약 신청하기', children: [
-      const Txt('만나서 말하기 어려울 때, 먼저 정중하게 신청해 보세요.', size: 13, muted: true),
-      Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Lbl('누구에게 신청할까요?', small: '친구 중에서 여러 명 고를 수 있어요'),
-        const SizedBox(height: 8),
-        AppCard(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Column(children: [
-            for (var i = 0; i < kFriends.length; i++)
-              PersonRow(
-                first: i == 0,
-                avatar: Avatar(kFriends[i].n[0], style: pal(ctx).types[kFriends[i].t]),
-                name: kFriends[i].n,
-                sub: kFriends[i].d,
-                trailing: AppSwitch(on: app.reqTo[i] ?? false, label: '${kFriends[i].n}에게 신청하기', onTap: () => app.toggleReqTo(i)),
-              ),
-          ]),
-        ),
-      ]),
+      const Txt('맞팔한 친구에게만 신청할 수 있어요. 만나서 말하기 어려울 때 먼저 정중하게 보내 보세요.', size: 13, muted: true),
+      AppCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: mutual.isEmpty
+            ? const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Txt('맞팔한 친구가 아직 없어요. 내 정보에서 팔로우해 보세요.', muted: true, align: TextAlign.center))
+            : Column(children: [
+                for (var i = 0; i < mutual.length; i++)
+                  PersonRow(
+                    first: i == 0,
+                    avatar: Avatar(kFriends[mutual[i]].n[0], style: pal(ctx).types[kFriends[mutual[i]].t]),
+                    name: kFriends[mutual[i]].n,
+                    sub: kFriends[mutual[i]].d,
+                    trailing: AppSwitch(on: app.reqPicked.contains(mutual[i]), label: '${kFriends[mutual[i]].n}에게 신청', onTap: () => app.reqTogglePick(mutual[i])),
+                  ),
+              ]),
+      ),
       Field('보낼 메시지', child: AppInput(controller: app.reqMsgC, maxLines: 4)),
       SwitchCard(title: '익명으로 신청하기', sub: '수락하면 이름이 공개돼요', on: app.reqAnon, onTap: app.reqToggleAnon),
-      Btn(n == 0 ? '신청할 친구를 골라주세요' : '$n명에게 신청 보내기', onTap: n == 0
+      Btn(mutual.isEmpty || app.reqPicked.isEmpty ? '신청할 친구를 골라주세요' : '${app.reqPicked.length}명에게 신청 보내기', onTap: mutual.isEmpty || app.reqPicked.isEmpty
           ? null
           : () {
-              Navigator.of(ctx).pop();
-              app.reqSend();
+              if (app.reqSend()) Navigator.of(ctx).pop();
             }),
     ]);
   });

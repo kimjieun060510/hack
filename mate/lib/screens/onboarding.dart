@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data.dart';
+import '../feeds.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -9,16 +10,30 @@ import '../widgets.dart';
 
 // ------------------------------------------------------------------ 로그인
 
-class LoginScreen extends LiveView {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget body(BuildContext context) {
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _idFocus = FocusNode();
+  final _pwFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _idFocus.dispose();
+    _pwFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final p = pal(context);
     return Backdrop(
       child: SafeArea(
         child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(24, 46, 24, 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const Padding(padding: EdgeInsets.only(left: 6), child: UnderTitle('로그인')),
@@ -38,46 +53,65 @@ class LoginScreen extends LiveView {
                   child: const MateLogo(size: 62),
                 ),
                 const SizedBox(height: 18),
-                AppInput(controller: app.idC, hint: '학번', prefix: 'school', pill: true, keyboardType: TextInputType.number, action: TextInputAction.next),
-                const SizedBox(height: 12),
                 AppInput(
-                  controller: app.pwC,
-                  hint: '비밀번호',
-                  prefix: 'lock',
+                  controller: app.idC,
+                  focusNode: _idFocus,
+                  hint: '학번',
+                  prefix: 'school',
                   pill: true,
-                  obscure: !app.showPw,
-                  action: TextInputAction.done,
-                  onSubmitted: (_) => app.login(),
-                  suffix: IconButton(
-                    tooltip: app.showPw ? '비밀번호 숨기기' : '비밀번호 보기',
-                    onPressed: app.togglePw,
-                    icon: Icon(icon(app.showPw ? 'eye' : 'eyeOff'), color: p.mut),
+                  autocorrect: false,
+                  keyboardType: TextInputType.visiblePassword,
+                  action: TextInputAction.next,
+                  onSubmitted: (_) => _pwFocus.requestFocus(),
+                ),
+                const SizedBox(height: 12),
+                ListenableBuilder(
+                  listenable: app,
+                  builder: (context, _) => AppInput(
+                    controller: app.pwC,
+                    focusNode: _pwFocus,
+                    hint: '비밀번호',
+                    prefix: 'lock',
+                    pill: true,
+                    autocorrect: false,
+                    obscure: !app.showPw,
+                    keyboardType: TextInputType.visiblePassword,
+                    action: TextInputAction.done,
+                    onSubmitted: (_) => app.login(),
+                    suffix: IconButton(
+                      tooltip: app.showPw ? '비밀번호 숨기기' : '비밀번호 보기',
+                      onPressed: app.togglePw,
+                      icon: Icon(icon(app.showPw ? 'eye' : 'eyeOff'), color: p.mut),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
-                Semantics(
-                  checked: app.autoLogin,
-                  label: '자동 로그인',
-                  child: InkWell(
-                    onTap: app.toggleAuto,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                      child: Row(children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 140),
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            color: app.autoLogin ? p.pri : Colors.transparent,
-                            borderRadius: BorderRadius.circular(7),
-                            border: Border.all(color: app.autoLogin ? p.pri : p.mut, width: 2),
+                ListenableBuilder(
+                  listenable: app,
+                  builder: (context, _) => Semantics(
+                    checked: app.autoLogin,
+                    label: '자동 로그인',
+                    child: InkWell(
+                      onTap: app.toggleAuto,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        child: Row(children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 140),
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color: app.autoLogin ? p.pri : Colors.transparent,
+                              borderRadius: BorderRadius.circular(7),
+                              border: Border.all(color: app.autoLogin ? p.pri : p.mut, width: 2),
+                            ),
+                            child: app.autoLogin ? Icon(icon('check'), size: 18, color: p.priInk) : null,
                           ),
-                          child: app.autoLogin ? Icon(icon('check'), size: 18, color: p.priInk) : null,
-                        ),
-                        const SizedBox(width: 10),
-                        const Txt('자동 로그인', size: 16),
-                      ]),
+                          const SizedBox(width: 10),
+                          const Txt('자동 로그인', size: 16),
+                        ]),
+                      ),
                     ),
                   ),
                 ),
@@ -127,7 +161,16 @@ class VerifyScreen extends LiveView {
               ]),
             ),
             Field('이름', child: AppInput(controller: app.signNameC, hint: '이름을 입력해주세요', action: TextInputAction.next)),
-            Field('학번', child: AppInput(controller: app.signNoC, hint: '학번을 입력해주세요', keyboardType: TextInputType.number, action: TextInputAction.next)),
+            Field(
+              '학번',
+              child: AppInput(
+                controller: app.signNoC,
+                hint: '학번을 입력해주세요',
+                autocorrect: false,
+                keyboardType: TextInputType.visiblePassword,
+                action: TextInputAction.next,
+              ),
+            ),
             Field('학과', child: AppInput(controller: app.signDeptC, hint: '학과를 입력해주세요', action: TextInputAction.done)),
             Field('성별', child: TwoWaySeg(items: const [('male', '남'), ('female', '여')], value: app.gender, onChanged: app.setGender)),
             if (app.signErr.isNotEmpty) Text(app.signErr, textAlign: TextAlign.center, style: TextStyle(color: p.danger, fontSize: 14, fontWeight: FontWeight.w700)),
@@ -185,11 +228,7 @@ class InterestScreen extends LiveView {
   @override
   Widget body(BuildContext context) {
     final p = pal(context);
-    const src = [
-      ('icampus', '아이캠퍼스', '수업 시간표와 과제 마감을 자동으로 가져와요'),
-      ('dept', '학과 홈페이지', '공지·비교과·장학금·산학협력 소식을 모아와요'),
-      ('etta', '에브리타임', '내 계정으로, 내 폰에서만 불러와서 나 혼자 봐요'),
-    ];
+    const src = kFeedSources;
     return Backdrop(
       leaves: false,
       child: SafeArea(
@@ -214,7 +253,7 @@ class InterestScreen extends LiveView {
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 const Lbl('소식을 가져올 곳'),
                 const SizedBox(height: 8),
-                ...gapped([for (final s in src) SwitchCard(title: s.$2, sub: s.$3, on: app.conn[s.$1] ?? false, onTap: () => app.toggleConn(s.$1))], 8),
+                ...gapped([for (final s in src) SourceCard(s: s)], 8),
               ]),
             ]),
           ),
