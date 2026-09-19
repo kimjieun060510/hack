@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   url_launcher: ^6.3.0
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
@@ -17,6 +18,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/feeds/
   fonts:
     - family: Jua
       fonts:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data.dart';
+import '../feeds.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -221,11 +222,7 @@ class MeScreen extends LiveView {
   @override
   Widget body(BuildContext context) {
     final p = pal(context);
-    const src = [
-      ('icampus', '아이캠퍼스', '시간표 · 과제 자동 반영'),
-      ('dept', '학과 홈페이지', '공지 · 비교과 · 장학금'),
-      ('etta', '에브리타임', '내 계정으로, 내 폰에서만'),
-    ];
+    const src = kFeedSources;
     return Backdrop(
       child: SafeArea(
         bottom: false,
@@ -265,7 +262,9 @@ class MeScreen extends LiveView {
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 const Lbl('정보를 가져올 곳'),
                 const SizedBox(height: 8),
-                ...gapped([for (final s in src) SwitchCard(title: s.$2, sub: s.$3, on: app.conn[s.$1] ?? false, onTap: () => app.toggleConn(s.$1))], 8),
+                ...gapped([for (final s in src) SourceCard(s: s)], 8),
+                const SizedBox(height: 8),
+                Btn('지금 가져오기', ic: 'refresh', kind: 'line', small: true, onTap: () => app.syncFeeds()),
                 const SizedBox(height: 8),
                 Btn('관심사 다시 고르기', ic: 'sparkle', kind: 'line', small: true, onTap: app.redoInterest),
               ]),
