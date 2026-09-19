@@ -140,7 +140,7 @@ class AppState extends ChangeNotifier {
     fields = {'개발·IT': true, '경영·마케팅': true};
     conn = {'icampus': true, 'dept': true, 'etta': true};
     customTypes = [];
-    meetPosts = List.of(kMeetSeed);
+    meetPosts = [for (final p in kMeetSeed) MeetPost(p.id, p.key, p.time, p.place, p.size, List.of(p.m), List.of(p.f), mine: p.mine, note: p.note)];
     meal = MealState();
     meet = MeetState();
     play = PlayState();
@@ -370,7 +370,8 @@ class AppState extends ChangeNotifier {
     return l;
   }
 
-  int confirmedMeetCount() => myPlans().where((e) => !e.title.startsWith('밥약')).length;
+  /// 이번 주(월~일)에 올라온 과팅 팀 수
+  int weekMeetTeamCount() => meetPosts.where((p) => kWeek.contains(dayOf(p.key))).length;
 
   String formatStudentNo() {
     final n = studentNo.replaceAll(RegExp(r'\s'), '');
@@ -379,6 +380,27 @@ class AppState extends ChangeNotifier {
 
   // 과팅 도우미
   int meetCap(String size) => int.tryParse(size.split(':').first) ?? 2;
+
+  int meetMaleCap(String size) => int.tryParse(size.split(':').first) ?? 2;
+
+  int meetFemaleCap(String size) {
+    final parts = size.split(':');
+    return int.tryParse(parts.length > 1 ? parts.last : parts.first) ?? 2;
+  }
+
+  int meetSideCap(MeetPost post) => gender == 'male' ? meetMaleCap(post.size) : meetFemaleCap(post.size);
+
+  int meetSideCount(MeetPost post) => gender == 'male' ? post.m.length : post.f.length;
+
+  bool meetSideFull(MeetPost post) => meetSideCount(post) >= meetSideCap(post);
+
+  String meetSideName() => gender == 'male' ? '남자' : '여자';
+
+  (String, int) meTag() {
+    final n = studentNo.replaceAll(RegExp(r'\s'), '');
+    final y = n.length >= 4 ? (int.tryParse(n.substring(2, 4)) ?? 26) : 26;
+    return ('소프트', y);
+  }
 
   // ------------------------------------------------------------ 알림 · 토스트 · 배너
 
@@ -975,14 +997,23 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  /// 올라온 과팅에 신청 → 바로 매칭 (데모)
+  /// 올라온 과팅에 신청. 내 성별 쪽에 자리가 있으면 그 그룹에 들어가요.
   void meetApply(String id) {
-    if (!meetApplied.add(id)) return;
+    if (meetApplied.contains(id)) return;
     final post = meetPosts.firstWhere((x) => x.id == id);
+    if (post.mine) return;
+    if (meetSideFull(post)) {
+      showToast('이 과팅은 ${meetSideName()} 인원이 다 찼어요');
+      return;
+    }
+    meetApplied.add(id);
+    final tag = meTag();
+    if (gender == 'male') {
+      post.m.add(tag);
+    } else {
+      post.f.add(tag);
+    }
     final end = fromMin(toMin(post.time) + 120);
-    final when = '${shortDate(post.key)} ${post.time}';
-    meet.step = 'matched';
-    meet.postId = id;
     events.add(Ev(
       id: 'e${_uid++}',
       key: post.key,
@@ -990,10 +1021,10 @@ class AppState extends ChangeNotifier {
       end: end,
       type: 'meet',
       title: '과팅 ${post.size.replaceAll(':', ' : ')}',
-      sub: '${post.place} · 우리 팀과 함께',
+      sub: '${post.place} · ${meetSideName()} 팀 · 나',
       mine: true,
     ));
-    showBanner(BannerData(t: 'meet', ic: 'heart', k: '과팅 매칭', title: '상대 팀과 이어졌어요', body: '$when · ${post.place} · ${post.size.replaceAll(':', ' : ')}', cta: '내 약속 보기', go: 'plans'));
+    showToast('${meetSideName()} 팀에 들어갔어요. 달력에 넣어뒀어요');
     _n();
   }
 

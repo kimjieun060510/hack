@@ -30,7 +30,6 @@ class CalendarScreen extends LiveView {
         bottom: false,
         child: BackHeader(
           '',
-          pill: '달력',
           titleWidget: Text.rich(TextSpan(children: [
             TextSpan(text: '9월', style: disp(34, p.ink, height: 1.1)),
             TextSpan(text: ' 2026', style: TextStyle(fontSize: 13, color: p.mut)),

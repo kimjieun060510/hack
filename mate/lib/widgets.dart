@@ -742,46 +742,31 @@ class MeBtn extends StatelessWidget {
   const MeBtn({super.key});
 
   @override
-  Widget build(BuildContext context) => RoundIconBtn(ic: 'user', label: '내 정보', onTap: () => app.open('me'));
-}
-
-/// 오른쪽 위 초록 알약 (시안의 "과팅 / 놀기", "달력"). 누르면 메인화면으로 가요.
-class ModePill extends StatelessWidget {
-  final String label;
-  const ModePill(this.label, {super.key});
-
-  @override
   Widget build(BuildContext context) {
     final p = pal(context);
     return Semantics(
       button: true,
-      label: '$label, 메인화면으로',
-      child: Material(
-        color: p.pri,
-        shape: const StadiumBorder(),
-        child: InkWell(
-          onTap: app.goHome,
-          customBorder: const StadiumBorder(),
-          child: Container(
-            height: 44,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            alignment: Alignment.center,
-            child: Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: p.priInk)),
-          ),
+      label: '내 정보',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => app.open('me'),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 10, 4, 10),
+          child: Text('내 정보', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: p.priText)),
         ),
       ),
     );
   }
 }
 
-/// 화면 위쪽 머리글: 뒤로가기 + 제목 + (오른쪽 알약 · 버튼들)
+/// 화면 위쪽 머리글: 뒤로가기 + 제목 + (오른쪽 버튼들)
 class BackHeader extends StatelessWidget {
   final String title;
   final Widget? titleWidget;
-  final String? pill;
   final List<Widget> actions;
   final VoidCallback? onBack;
-  const BackHeader(this.title, {super.key, this.titleWidget, this.pill, this.actions = const [], this.onBack});
+  const BackHeader(this.title, {super.key, this.titleWidget, this.actions = const [], this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -800,7 +785,6 @@ class BackHeader extends StatelessWidget {
         ),
         const SizedBox(width: 2),
         Expanded(child: titleWidget ?? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: disp(26, p.ink, height: 1.2))),
-        if (pill != null) ModePill(pill!),
         for (final a in actions) ...[const SizedBox(width: 8), a],
       ]),
     );

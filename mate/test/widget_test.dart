@@ -62,6 +62,83 @@ void main() {
     expect(find.text('처음 상태로 되돌리기'), findsNothing);
   });
 
+  testWidgets('메인 인사와 과팅 팀 문구가 바뀌었어요', (tester) async {
+    await pumpApp(tester);
+    await login(tester);
+
+    expect(find.textContaining('혜인님', findRichText: true), findsOneWidget);
+    expect(find.textContaining('메이트 찾으시나요?', findRichText: true), findsOneWidget);
+    expect(find.textContaining('오늘도 혼자가 아니에요', findRichText: true), findsNothing);
+    expect(find.textContaining('이번주 과팅 팀 2개'), findsOneWidget);
+    expect(find.textContaining('이벤트 확정됨'), findsNothing);
+  });
+
+  testWidgets('페이지 오른쪽 위에 동그란 홈 버튼이 없어요', (tester) async {
+    await pumpApp(tester);
+    await login(tester);
+
+    expect(find.bySemanticsLabel('달력, 메인화면으로'), findsNothing);
+    expect(find.bySemanticsLabel('과팅 / 놀기, 메인화면으로'), findsNothing);
+
+    await tester.tap(find.text('달력').first);
+    await tester.pump();
+    expect(find.bySemanticsLabel('달력, 메인화면으로'), findsNothing);
+
+    await tester.tap(find.bySemanticsLabel('뒤로가기'));
+    await tester.pump();
+    await tester.tap(find.text('과팅 / 놀기'));
+    await tester.pump();
+    expect(find.bySemanticsLabel('과팅 / 놀기, 메인화면으로'), findsNothing);
+  });
+
+  testWidgets('추천 탭은 둘러보세요만 있고 관심 카드는 없어요', (tester) async {
+    await pumpApp(tester);
+    await login(tester);
+    await tester.tap(find.text('달력').first);
+    await tester.pump();
+    await tester.tap(find.text('추천'));
+    await tester.pump();
+
+    expect(find.text('둘러보세요'), findsOneWidget);
+    expect(find.text('이거 관심 있으세요?'), findsNothing);
+    expect(find.text('이런 것도 있어요'), findsNothing);
+  });
+
+  testWidgets('과팅은 내 성별 팀이 가득하면 신청불가예요', (tester) async {
+    await pumpApp(tester);
+    await login(tester);
+
+    await tester.tap(find.text('과팅 / 놀기'));
+    await tester.pump();
+    expect(find.text('신청불가'), findsWidgets);
+    expect(find.text('신청하기'), findsNothing);
+
+    await tester.tap(find.bySemanticsLabel('뒤로가기'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('내 약속'));
+    await tester.tap(find.text('내 약속'));
+    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('내 정보'));
+    await tester.pump();
+    await tester.tap(find.text('여성'));
+    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('뒤로가기'));
+    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('뒤로가기'));
+    await tester.pump();
+    await tester.tap(find.text('과팅 / 놀기'));
+    await tester.pump();
+
+    expect(find.text('신청하기'), findsWidgets);
+    await tester.tap(find.text('신청하기').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('우리 팀으로 신청하기'));
+    await tester.pump();
+    expect(find.text('신청했어요'), findsOneWidget);
+    expect(find.text('남 3 · 여 2'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 2500));
+  });
+
   testWidgets('밥약 신청하기에서 친구를 골라 보낼 수 있어요', (tester) async {
     await pumpApp(tester);
     await login(tester);

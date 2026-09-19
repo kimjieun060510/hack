@@ -30,8 +30,8 @@ class HomeScreen extends LiveView {
               Padding(
                 padding: const EdgeInsets.only(left: 6),
                 child: Text.rich(TextSpan(children: [
-                  TextSpan(text: '${app.userName}님, ', style: TextStyle(fontWeight: FontWeight.w800, color: p.ink)),
-                  TextSpan(text: '오늘도 혼자가 아니에요.', style: TextStyle(color: p.mut)),
+                  TextSpan(text: '${app.userName}님 ', style: TextStyle(fontWeight: FontWeight.w800, color: p.ink)),
+                  TextSpan(text: '메이트 찾으시나요?', style: TextStyle(color: p.mut)),
                 ]), style: const TextStyle(fontSize: 16, height: 1.4)),
               ),
               _HomeCard(
@@ -45,7 +45,7 @@ class HomeScreen extends LiveView {
                 ic: 'heart',
                 title: '과팅 / 놀기',
                 sub: '함께할 친구를 찾아보세요.\n학교에서, 카페에서, 어디서든 좋아요!',
-                chip: '이벤트 확정됨 ${app.confirmedMeetCount()}개',
+                chip: '이번주 과팅 팀 ${app.weekMeetTeamCount()}개',
                 onTap: () => app.openMeet(),
               ),
               _HomeCard(

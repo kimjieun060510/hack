@@ -237,6 +237,7 @@ Future<void> showMealDetailSheet(BuildContext context, RandMeal q) {
 Future<void> showMeetApplySheet(BuildContext context, MeetPost post) {
   return _openSheet<void>(context, (ctx) {
     final p = pal(ctx);
+    final full = app.meetSideFull(post);
     return SheetFrame(title: '과팅 신청', children: [
       AppCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -251,11 +252,17 @@ Future<void> showMeetApplySheet(BuildContext context, MeetPost post) {
           ]),
         ]),
       ),
+      if (full)
+        Txt('이 과팅은 ${app.meetSideName()} 인원이 다 찼어요. 다른 팀을 찾아 보세요.', size: 13, muted: true)
+      else
+        Txt('신청하면 ${app.meetSideName()} 팀에 들어가요.', size: 13, muted: true),
       const SafeCard(title: '매너 지킴이', body: '만난 뒤에 불편했다면 익명으로 경고를 보낼 수 있어요. 경고가 3번 쌓이면 과팅이 몇 주간 정지돼요.'),
-      Btn('우리 팀으로 신청하기', ic: 'heart', onTap: () {
-        Navigator.of(ctx).pop();
-        app.meetApply(post.id);
-      }),
+      Btn(full ? '신청불가' : '우리 팀으로 신청하기', ic: full ? null : 'heart', onTap: full
+          ? null
+          : () {
+              Navigator.of(ctx).pop();
+              app.meetApply(post.id);
+            }),
     ]);
   });
 }
