@@ -303,36 +303,48 @@ class _EventRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = pal(context);
     final t = tsOf(context, e.type);
-    return Container(
-      constraints: const BoxConstraints(minHeight: 56),
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: p.line))),
-      child: IntrinsicHeight(
-        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          SizedBox(width: 42, child: Center(child: Text(e.t, style: TextStyle(fontSize: 12, color: p.mut)))),
-          const SizedBox(width: 10),
-          Container(width: 4, margin: const EdgeInsets.symmetric(vertical: 4), decoration: BoxDecoration(color: t.c, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-              Text(e.title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, height: 1.35, color: p.ink)),
-              Text(e.sub, style: TextStyle(fontSize: 12, height: 1.4, color: p.mut)),
-            ]),
+    return Semantics(
+      button: true,
+      label: '${e.title} 수정',
+      explicitChildNodes: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => showEditSheet(context, e),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 56),
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(border: Border(top: BorderSide(color: p.line))),
+            child: IntrinsicHeight(
+              child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                SizedBox(width: 42, child: Center(child: Text(e.t, style: TextStyle(fontSize: 12, color: p.mut)))),
+                const SizedBox(width: 10),
+                Container(width: 4, margin: const EdgeInsets.symmetric(vertical: 4), decoration: BoxDecoration(color: t.c, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text(e.title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, height: 1.35, color: p.ink)),
+                    Text(e.sub, style: TextStyle(fontSize: 12, height: 1.4, color: p.mut)),
+                  ]),
+                ),
+                const SizedBox(width: 8),
+                Center(child: Pill(app.typeName(e.type), style: t)),
+                SizedBox(width: 36, height: 44, child: Icon(icon('pencil'), size: 18, color: p.mut)),
+                if (e.mine || e.type == 'opp')
+                  Semantics(
+                    button: true,
+                    label: '${e.title} 삭제',
+                    child: InkWell(
+                      onTap: () => app.deleteEvent(e.id),
+                      child: SizedBox(width: 36, height: 44, child: Icon(icon('x'), size: 18, color: p.mut)),
+                    ),
+                  )
+                else
+                  const SizedBox(width: 4),
+              ]),
+            ),
           ),
-          const SizedBox(width: 8),
-          Center(child: Pill(app.typeName(e.type), style: t)),
-          if (e.mine || e.type == 'opp')
-            Semantics(
-              button: true,
-              label: '${e.title} 삭제',
-              child: InkWell(
-                onTap: () => app.deleteEvent(e.id),
-                child: SizedBox(width: 36, height: 44, child: Icon(icon('x'), size: 18, color: p.mut)),
-              ),
-            )
-          else
-            const SizedBox(width: 4),
-        ]),
+        ),
       ),
     );
   }
@@ -348,16 +360,26 @@ class _UpCard extends StatelessWidget {
     final t = tsOf(context, e.type);
     final parts = e.sub.split(' · ');
     final from = e.type == 'assign' ? '아이캠퍼스' : (parts.length > 1 ? parts[1] : '기회');
-    return Container(
-      width: 164,
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: p.line)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('${ddayText(e.key)} · $from', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: t.ink)),
-        const SizedBox(height: 2),
-        Text(e.title, style: TextStyle(fontSize: 13, height: 1.4, color: p.ink)),
-      ]),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          app.selectDay(e.key);
+          showEditSheet(context, e);
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: 164,
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: p.line)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${ddayText(e.key)} · $from', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: t.ink)),
+            const SizedBox(height: 2),
+            Text(e.title, style: TextStyle(fontSize: 13, height: 1.4, color: p.ink)),
+          ]),
+        ),
+      ),
     );
   }
 }

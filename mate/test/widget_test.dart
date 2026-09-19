@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mate/data.dart';
 import 'package:mate/feeds.dart';
 import 'package:mate/main.dart';
 import 'package:mate/state.dart';
@@ -209,6 +210,67 @@ void main() {
     expect(app.sel, '9-30');
     app.events.removeWhere((e) => e.id == ev.id);
     app.opps.removeWhere((x) => x.id == o.id);
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  test('날짜 글자를 9월 밖도 포함해 달력 키로 바꿔요', () {
+    expect(parseDate('9/28'), '9-28');
+    expect(parseDate('28'), '9-28');
+    expect(parseDate('0928'), '9-28');
+    expect(parseDate('9월 28일'), '9-28');
+    expect(parseDate('10/1'), '10-1');
+    expect(parseDate('10월 13일'), '10-13');
+    expect(parseDate('9/31'), isNull);
+    expect(parseDate('13/1'), isNull);
+    expect(parseDate(''), isNull);
+  });
+
+  test('달력에 있는 일정의 제목·날짜·시간을 고칠 수 있어요', () {
+    app.resetAll();
+    final e = app.events.firstWhere((x) => x.title == '카페 알바' && x.key == '9-22');
+    app.prepareEdit(e);
+    expect(app.isEditing, isTrue);
+    expect(app.addTitleC.text, '카페 알바');
+    expect(app.addDateC.text, '9/22');
+    expect(app.addType, 'job');
+    app.addTitleC.text = '도서관 알바';
+    app.addDateC.text = '10/2';
+    app.addStart = '13:00';
+    app.addEnd = '17:00';
+    expect(app.submitAdd(), isNull);
+    final edited = app.events.firstWhere((x) => x.id == e.id);
+    expect(edited.title, '도서관 알바');
+    expect(edited.key, '10-2');
+    expect(edited.t, '13:00');
+    expect(edited.end, '17:00');
+    expect(edited.hours, 4);
+    expect(app.sel, '10-2');
+    expect(app.isEditing, isFalse);
+    expect(app.events.where((x) => x.id == e.id).length, 1);
+  });
+
+  testWidgets('달력에서 일정을 누르면 수정 창이 열려요', (tester) async {
+    await tester.pumpWidget(const MateApp());
+    app.resetAll();
+    app.idC.text = '2026123456';
+    app.pwC.text = 'demo';
+    app.login();
+    await tester.pump();
+    app.jump(1);
+    await tester.pumpAndSettle();
+    expect(find.text('자료구조 과제 2'), findsWidgets);
+    final row = find.bySemanticsLabel('자료구조 과제 2 수정');
+    await tester.ensureVisible(row);
+    await tester.pumpAndSettle();
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    expect(find.text('일정 수정'), findsOneWidget);
+    expect(find.text('저장'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, '과제 이름 바꿈');
+    await tester.tap(find.text('저장'));
+    await tester.pumpAndSettle();
+    expect(find.text('일정 수정'), findsNothing);
+    expect(find.text('과제 이름 바꿈'), findsWidgets);
     await tester.pump(const Duration(seconds: 3));
   });
 }

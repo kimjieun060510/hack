@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data.dart';
 import '../feeds.dart';
+import '../sheets.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -178,27 +179,40 @@ class _PlanRow extends StatelessWidget {
     return AppCard(
       padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
       child: Row(children: [
-        Container(
-          width: 58,
-          height: 62,
-          decoration: BoxDecoration(color: p.tint, borderRadius: BorderRadius.circular(18)),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('${dayOf(e.key)}', style: disp(22, p.ink, height: 1.1)),
-            Text(kDayN[dowOf(e.key)], style: TextStyle(fontSize: 12, color: p.mut)),
-          ]),
-        ),
-        const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Pill(ddayText(e.key), style: t),
-              const SizedBox(width: 6),
-              Text(e.end.isEmpty ? e.t : '${e.t}–${e.end}', style: TextStyle(fontSize: 12, color: p.mut)),
+          child: InkWell(
+            onTap: () => showEditSheet(context, e),
+            borderRadius: BorderRadius.circular(16),
+            child: Row(children: [
+              Container(
+                width: 58,
+                height: 62,
+                decoration: BoxDecoration(color: p.tint, borderRadius: BorderRadius.circular(18)),
+                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Text('${dayOf(e.key)}', style: disp(22, p.ink, height: 1.1)),
+                  Text(kDayN[dowOf(e.key)], style: TextStyle(fontSize: 12, color: p.mut)),
+                ]),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Pill(ddayText(e.key), style: t),
+                    const SizedBox(width: 6),
+                    Text(e.end.isEmpty ? e.t : '${e.t}–${e.end}', style: TextStyle(fontSize: 12, color: p.mut)),
+                  ]),
+                  const SizedBox(height: 4),
+                  Text(e.title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, height: 1.3, color: p.ink)),
+                  Text(e.sub, style: TextStyle(fontSize: 12, height: 1.4, color: p.mut)),
+                ]),
+              ),
+              Semantics(
+                button: true,
+                label: '${e.title} 수정',
+                child: SizedBox(width: 36, height: 44, child: Icon(icon('pencil'), size: 18, color: p.mut)),
+              ),
             ]),
-            const SizedBox(height: 4),
-            Text(e.title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, height: 1.3, color: p.ink)),
-            Text(e.sub, style: TextStyle(fontSize: 12, height: 1.4, color: p.mut)),
-          ]),
+          ),
         ),
         Semantics(
           button: true,
