@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'data.dart';
 import 'screens/onboarding.dart';
 import 'screens/calendar.dart';
+import 'screens/channel.dart';
 import 'screens/home.dart';
 import 'screens/reco.dart';
 import 'screens/social.dart';
@@ -59,6 +60,7 @@ class Shell extends LiveView {
 
     // 아래 탭(달력 · 추천)은 이 두 화면에서만 보여요
     final showTabs = (app.screen == 'cal' || app.screen == 'reco') && !keyboard;
+    final showChannelFab = app.screen != 'login' && app.screen != 'verify' && !app.push;
 
     return PopScope(
       canPop: false,
@@ -77,6 +79,12 @@ class Shell extends LiveView {
           if (app.banner != null) _BannerCard(b: app.banner!),
           if (app.toastMsg.isNotEmpty) _Toast(text: app.toastMsg),
           if (app.push) const _LockPreview(),
+          if (showChannelFab && !keyboard)
+            Positioned(
+              right: 16,
+              bottom: (showTabs ? 92 : 28) + MediaQuery.paddingOf(context).bottom,
+              child: const ChannelTalkFab(),
+            ),
         ]),
       ),
     );

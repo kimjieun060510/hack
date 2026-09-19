@@ -4,6 +4,7 @@ import '../data.dart';
 import '../state.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'channel.dart';
 
 /// 메인화면(카드 4개) · 내 약속 · 내 정보
 
@@ -246,7 +247,10 @@ class MeScreen extends LiveView {
                     ]),
                   ),
                   const SizedBox(height: 14),
-                  Btn('채널톡 연동', ic: 'chat', kind: 'soft', onTap: () => app.showToast('채널톡 문의 연동은 데모에서는 준비 중이에요')),
+                  KeyedSubtree(
+                    key: const Key('channel-talk-me'),
+                    child: Btn('채널톡 연동', ic: 'chat', kind: 'soft', onTap: () => openChannelTalk(context)),
+                  ),
                   const SizedBox(height: 12),
                   Center(child: Btn('로그아웃', ic: 'logout', kind: 'line', small: true, expand: false, onTap: app.logout)),
                 ]),

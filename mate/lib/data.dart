@@ -3,6 +3,10 @@
 
 const String kAppName = 'mate';
 
+/// 채널톡 데스크(https://desk.channel.io) → 설정 → 일반 설정 → 플러그인 키.
+/// 여기 넣거나 `--dart-define=CHANNEL_PLUGIN_KEY=...` 로 넘기면 초록 버튼이 상담창으로 이어져요.
+const String kChannelPluginKey = String.fromEnvironment('CHANNEL_PLUGIN_KEY', defaultValue: '');
+
 /// 데모 기준일: 2026-09-21 (월). 날짜는 'M-D' 글자로 다뤄요. 예) '9-21'
 const String kToday = '9-21';
 const List<String> kDayN = ['월', '화', '수', '목', '금', '토', '일'];

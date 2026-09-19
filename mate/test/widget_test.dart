@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mate/data.dart';
 import 'package:mate/feeds.dart';
 import 'package:mate/main.dart';
+import 'package:mate/screens/channel.dart';
 import 'package:mate/state.dart';
 
 void main() {
@@ -19,6 +21,8 @@ void main() {
   setUp(() {
     app.resetAll();
     app.logout();
+    channelTalkUseWebView = false;
+    channelTalkPluginKey = kChannelPluginKey;
   });
 
   Future<void> pumpApp(WidgetTester tester) async {
@@ -63,6 +67,34 @@ void main() {
     expect(find.text('지금 가져오기'), findsNothing);
     expect(find.text('데모 둘러보기'), findsNothing);
     await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('채널톡 버튼을 누르면 상담창이 열려요', (tester) async {
+    await pumpApp(tester);
+    await login(tester);
+    expect(find.byKey(const Key('channel-talk-fab')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('channel-talk-fab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(ChannelTalkScreen), findsOneWidget);
+    expect(find.text('채널톡'), findsWidgets);
+    expect(find.text('채널톡 문의 연동은 데모에서는 준비 중이에요'), findsNothing);
+    expect(find.textContaining('플러그인 키'), findsWidgets);
+    await tester.pump(const Duration(milliseconds: 2500));
+  });
+
+  testWidgets('내 정보에서 채널톡 연동을 누르면 상담창이 열려요', (tester) async {
+    await pumpApp(tester);
+    await login(tester);
+    app.open('me');
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('channel-talk-me')));
+    await tester.tap(find.byKey(const Key('channel-talk-me')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(ChannelTalkScreen), findsOneWidget);
+    expect(find.text('채널톡 문의 연동은 데모에서는 준비 중이에요'), findsNothing);
+    await tester.pump(const Duration(milliseconds: 2500));
   });
 
   test('성균관대 공지 HTML에서 제목·날짜·글번호를 뽑아요', () {
