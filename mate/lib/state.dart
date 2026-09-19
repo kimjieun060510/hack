@@ -124,6 +124,13 @@ class AppState extends ChangeNotifier {
   final addTitleC = TextEditingController();
   final addDateC = TextEditingController();
   final addNewC = TextEditingController();
+
+  // 일정 수정 창
+  String? editId;
+  String editType = 'job', editStart = '18:00', editEnd = '';
+  final editTitleC = TextEditingController();
+  final editDateC = TextEditingController();
+  final editSubC = TextEditingController();
   final reqMsgC = TextEditingController();
   final meetPlaceC = TextEditingController();
   final meetNoteC = TextEditingController();
@@ -873,6 +880,57 @@ class AppState extends ChangeNotifier {
     addNewOpen = false;
     addNewC.clear();
     _n();
+    return null;
+  }
+
+  // ------------------------------------------------------------ 일정 수정
+
+  /// 수정 창에 지금 일정 내용을 채워요.
+  void prepareEdit(Ev e) {
+    editId = e.id;
+    editType = e.type;
+    editStart = e.t;
+    editEnd = e.end;
+    editTitleC.text = e.title;
+    editDateC.text = shortDate(e.key).split(' ')[0];
+    editSubC.text = e.sub;
+  }
+
+  void setEditType(String v) {
+    editType = v;
+    _n();
+  }
+
+  void setEditTime(bool start, String v) {
+    if (start) {
+      editStart = v;
+    } else {
+      editEnd = v;
+    }
+    _n();
+  }
+
+  /// 일정 수정 저장. 문제가 있으면 안내 문구를, 성공하면 null 을 돌려줘요.
+  String? submitEdit() {
+    final i = events.indexWhere((x) => x.id == editId);
+    if (i < 0) return '이 일정을 찾을 수 없어요';
+    final old = events[i];
+    final key = parseSeptDate(editDateC.text);
+    if (key == null) return '9월 안의 날짜를 입력해주세요 (예: 9/28)';
+    final title = editTitleC.text.trim();
+    if (title.isEmpty) return '일정 이름을 적어주세요';
+    if (editEnd.isNotEmpty && toMin(editEnd) <= toMin(editStart)) return '끝나는 시간은 시작 시간보다 늦어야 해요';
+    final job = editType == 'job';
+    final h = job && editEnd.isNotEmpty ? hoursBetween(editStart, editEnd) : 0.0;
+    final hours = job ? (h == 0 ? (old.hours ?? 2) : h) : null;
+    var sub = editSubC.text.trim();
+    // '6시간 · 직접 입력' 처럼 자동으로 만든 설명은 시간을 바꾸면 같이 바꿔요
+    if (job && sub == old.sub && RegExp(r'^[\d.]+시간 · 직접 입력$').hasMatch(sub)) sub = '${fmtH(hours!)}시간 · 직접 입력';
+    events[i] = old.copyWith(key: key, t: editStart, end: editEnd, type: editType, title: title, sub: sub, hours: hours, clearHours: !job);
+    sel = key;
+    if (calView == 'week' && !kWeek.map((d) => '9-$d').contains(key)) calView = 'month';
+    editId = null;
+    showToast('일정을 고쳤어요');
     return null;
   }
 
